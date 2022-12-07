@@ -1,6 +1,10 @@
 /* @import url('https://fonts.googleapis.com/css2?family=Encode+Sans+Semi+Expanded:wght@300&family=Roboto+Mono&display=swap'); */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
 
+::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   background-color: #080e1a;
 }
@@ -24,7 +28,7 @@ body {
   margin-left: 0.4%;
   /* margin-right: 0.5%; */
   line-height: 2.3vw;  
-  letter-spacing: 0.05vw;
+  letter-spacing: 0.03vw;
   color: rgb(185, 175, 226);
 }
 
