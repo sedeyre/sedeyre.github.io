@@ -52,7 +52,9 @@ body {
 }
 
 .flex-container {  
-  visibility: hidden;  
+  visibility: hidden;
+  overflow-y: hidden;
+  overflow-x: hidden;
   animation: fadeInAnimation ease 5s;
   animation-iteration-count: 1;
   animation-fill-mode: forwards;
