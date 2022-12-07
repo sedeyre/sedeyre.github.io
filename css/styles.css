@@ -6,7 +6,10 @@
 }
 
 body {
-  background-color: #080e1a;
+  background-color: #080e1a;   
+  overflow-y: hidden;
+  overflow-x: hidden;
+  width: auto;
 }
 
 #logo {
@@ -25,10 +28,10 @@ body {
   text-align: justify;
   font-size: 2.4vw;
   margin-top: -2%;
-  margin-left: 0.4%;
-  /* margin-right: 0.5%; */
+  margin-left: 0.8%;
+  margin-right: 1%;
   line-height: 2.3vw;  
-  letter-spacing: 0.03vw;
+  letter-spacing: 0.05vw;
   color: rgb(185, 175, 226);
 }
 
@@ -36,10 +39,6 @@ body {
   font-family: "FreeMono", monospace;  
   text-align: justify;
   font-size: 2.4vw;
-  margin-top: -0.7%;
-  margin-left: 0.4%;
-  line-height: 2.4vw;
-  margin-right: 0.4%;
   letter-spacing: 0.05vw;
   background-color: #080e1a;
   color: rgb(185, 175, 226);
@@ -53,6 +52,7 @@ body {
 
 .flex-container {  
   visibility: hidden;
+  overflow: hidden;  
   overflow-y: hidden;
   overflow-x: hidden;
   animation: fadeInAnimation ease 5s;
@@ -86,7 +86,7 @@ body {
   display: inline-block;
   margin-top: -1%;
   margin-left: 1%;
-  /* margin-right: 1%; */
+  margin-right: 4%;
   animation: fadeInAnimation ease 5s;   
   animation-iteration-count: 1; 
   animation-fill-mode: forwards; 

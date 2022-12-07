@@ -1,6 +1,8 @@
 function xnsmn_chart() {
 
     const url2json = "https://sedeyre.github.io/json4datatable.json";
+    var width =document.documentElement.clientWidth; // make chart responsive  
+    var height = document.documentElement.clientHeight;
 
           let getJson = new Promise(function(data_OK) {
             const xmlhttp = new XMLHttpRequest();              
@@ -67,8 +69,8 @@ function xnsmn_chart() {
             legend: 'none',
             title: '',
             focusTarget: 'category',            
-            height: 650,  
-            width: 1900,          
+            height: height/1.5,  
+            width: width,          
 
             colorAxis: {
               colors:['#A3A2A1','#A3A2A1'],
@@ -88,7 +90,7 @@ function xnsmn_chart() {
 
             calendar: {
               backgroundColor:'black',          
-              cellSize: 34,          
+              cellSize: width/56,     // make chart responsive      
               daysOfWeek: 'smtwtfs',
               underYearSpace: 12,
               dayOfWeekRightSpace: 12,
@@ -115,7 +117,7 @@ function xnsmn_chart() {
               cellColor: {
                 stroke: '#080e1a',      // Color the border of the squares.
                 strokeOpacity: 1, // Make the borders half transparent.
-                strokeWidth: 5      // ...and two pixels thick.
+                strokeWidth: 9     // ...and two pixels thick.
               },
 
               dayOfWeekLabel: {
@@ -184,8 +186,9 @@ function switchOn_b2() {
   document.getElementById("calendar_basic").className = "calendar_basic_1";       
 } 
 
+window.addEventListener("resize", xnsmn_chart);
+xnsmn_chart();
 
-xnsmn_chart(); 
 // $(window).resize(function(){
 //     xnsmn_chart();  
 // });
