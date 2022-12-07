@@ -1,15 +1,107 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Encode+Sans+Semi+Expanded:wght@300&family=Roboto+Mono&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
 body {
-  background-color: #2E3440;
+  background-color: #080e1a;
+}
+
+#logo {
+  text-align: center;
+  width: 100%;
+  margin-top: -3%;  
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 100;
+  font-size: 9.9vw;  
+  font-kerning: auto;
+  letter-spacing: -0.01vw;
+  color: rgb(217, 216, 219);
+}
+#menu {
+  font-family: "FreeMono", monospace;  
+  text-align: justify;
+  font-size: 2.4vw;
+  margin-top: -2%;
+  margin-left: 0.6%;
+  margin-right: 0.7%;
+  line-height: 2.3vw;  
+  letter-spacing: 0.05vw;
+  color: rgb(185, 175, 226);
+}
+
+.button {
+  font-family: "FreeMono", monospace;  
+  text-align: justify;
+  font-size: 2.4vw;
+  margin-top: -0.7%;
+  margin-left: 0.4%;
+  line-height: 2.4vw;
+  margin-right: 0.4%;
+  letter-spacing: 0.05vw;
+  background-color: #080e1a;
+  color: rgb(185, 175, 226);
+  border: none;
+  transition-duration: 0.5s;
+}
+
+.button:hover {    
+  color: rgb(255, 255, 255);
+}
+
+.flex-container {  
+  visibility: hidden;  
+  animation: fadeInAnimation ease 5s;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  padding-top: 1%;
+  background-color: #080e1a;
+}
+
+.flex-container > div {  
+  padding-top: 1%;
+  padding-left: 1%;
+  padding-right: 1%;
+  padding-bottom: 1%;
+  background-color: #111e36;
+  color:  rgb(229, 229, 248);
+  font-family: "Free Sans", monospace;
+  width: 100px;
+  margin: 10px;
+  text-align: justify;
+  line-height: 1.5vw;
+  font-size: 1.1vw;
+  flex: 25%;
+}
+
+.calendar_basic_0{
+  visibility: hidden;
+}
+.calendar_basic_1 {  
+  visibility: visible;
+  display: inline-block;
+  margin-top: -1%;
+  margin-left: 1%;
+  /* margin-right: 1%; */
+  animation: fadeInAnimation ease 5s;   
+  animation-iteration-count: 1; 
+  animation-fill-mode: forwards; 
+}
+
+@keyframes fadeInAnimation {
+  0% {opacity: 0;}
+  100% {opacity: 1;}
 }
 
 #img-container {  
-  padding:20px 350px 20px 20px;
-  background-color: #222028;
+  padding-left: 35px;
+  padding-right: 610px;
+  padding-top: 35px;
+  padding-bottom: 35px;
+  background-color: #12141A;
 }
 
 #img-box {    
-  width:200px; 
-  height:200px; 
+  width:400px; 
+  height:400px; 
   box-shadow: 0 0px 10px 0 rgba(183, 176, 176, 0.7), 0px 0px 20px 0px rgba(154, 154, 154, 0.2);
   animation: fadeIn ease-in-out 1s;  
   }
@@ -25,7 +117,10 @@ body {
 
 #verse {
   color: rgb(143, 189, 194);
-  padding: 20px 0px 0px 250px;
+  padding-left: 470px;
+  padding-right: 20px;
+  padding-top: 35px;
+  padding-bottom:20px;
   animation: fadeIn ease-in 3s;
   }
 
@@ -39,7 +134,10 @@ body {
 }
 
 #name-date {
-  padding: 20px 0px 20px 250px;
+  padding-left: 470px;
+  padding-right: ;
+  padding-top: 20px;
+  padding-bottom: 35px;
   color:rgb(86, 144, 146);
   animation: fadeIn ease-in 5s;
 }
@@ -55,7 +153,7 @@ body {
 
 .google-visualization-tooltip { 
   pointer-events: none;
-  background-color: #222028 !important;
+  background-color: #0f0f12 !important;
   -webkit-text-fill-color: rgb(197, 194, 210);
   height:auto !important;
   overflow:hidden !important;
@@ -64,5 +162,5 @@ body {
   box-shadow: 7px 7px 5px 0px rgba(10, 10, 10, 0.75) !important;
   border-color: rgba(0, 235, 252, 0.807) !important;
   border-radius: 10px !important; 
-  font-size:  10px !important;
+  font-size:  17px !important;
 }
