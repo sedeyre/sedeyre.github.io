@@ -1,7 +1,7 @@
 function deploy_json() {
 
-    // const url2json = "https://sedeyre.github.io/json4datatable.json";
-    const url2json = "http://127.0.0.1:5500/sorted_dates.json";
+     const url2json = "https://sedeyre.github.io/json4datatable.json";
+//    const url2json = "http://127.0.0.1:5500/sorted_dates.json";
     
     var width = document.documentElement.clientWidth; // making chart responsive  
     var height = document.documentElement.clientHeight;
