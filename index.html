@@ -14,8 +14,9 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>        
     <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <script src="js/turn.js"></script>
+    <script src="js/turn.min.js"></script>
     <script src="/js/main.js"></script>
+    <!-- <script src="/js/xnsmn_book.js"></script> -->
     
  
 
@@ -33,12 +34,24 @@
         
         <div id="calendar_basic" class="calendar_basic_0"></div>
         
-        <div id="book" class="book_0">        
-          <div class="hard"> xenosemantica </div>
-          <div class="hard"></div> 
-          <div class="page"></div>     
-        </div>                   
-        
+        <div class="wrapper">
+          <div class="aspect">
+              <div class="aspect-inner">
+                  <div id="book" class="book_0">        
+                      <div class="hard"> xnsmn </div>
+                      <div class="hard"></div> 
+                      <div class="page"></div>       
+                  </div>
+                  <div class="slidecontainer">                      
+                      <input type="range" name="slide" min="1" max="400" value="1" step="2" class="slider" id="slideRange"> 
+                      <output id="bubble_date" class="bubble"></output>       
+                      <!-- <p><span id="volume"></span></p>
+                      <p><span id="event_date"></span></p>         -->
+                  </div>  
+              </div>
+            </div>
+        </div>  
+
     </body>
   
 </html>
