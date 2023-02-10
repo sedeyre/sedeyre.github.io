@@ -120,21 +120,22 @@ body {
   margin-right: 4%;
   animation: fadeIn ease 5s; 
 }
-
 .container {
-  padding-left: 2.1vw;
-  padding-bottom: 2vw;
-  padding-top: 2vw;
+  padding-left: 1.2vw;
+  padding-bottom: 1.2vw;
+  padding-top: 1.2vw;
   display: flex;
   align-items:flex-start;
   justify-content: center;
 }
 img {
-  max-width: 18vw
+  border-radius: 0.5vw;
+  max-width: 16vw
 }
 .image {
   flex-basis: 0%;
   order: 0;
+  
 }
 .text {
   flex-basis: 100%; 
@@ -143,7 +144,7 @@ img {
   font: italic 1vw "Fira Sans", serif;
 }
 #event_ {
-  padding-top: 6vw;
+ padding-top: 3vw;
 }
 
 .google-visualization-tooltip { 
@@ -154,7 +155,7 @@ img {
   width: auto !important;
   overflow:hidden !important;
   padding-right: 2.1vw !important;
-  margin: 0 !important;
+  margin-block: -5vw !important;
   box-shadow: 1vw 0.8vw 0.7vw 0.1vw rgba(10, 10, 10, 0.75) !important;
   border-color: rgba(0, 235, 252, 0.807) !important;
   border-radius: 1vw !important; 
