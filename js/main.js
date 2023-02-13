@@ -3,18 +3,19 @@ const get_Json = fetch("https://sedeyre.github.io/json4datatable.json")
       return response.json();
   });
 
-const make_book = function() {
-  get_Json.then(function(res) {
-      makeBook(res);      
-  });
-  };
+// const make_book = function() {
+//   get_Json.then(function(res) {
+//       makeBook(res);      
+//   });
+//   };
 
-const make_chart = function() {
+const make_charts = function() {
   get_Json.then(function(res) {
     google.charts.load('current', {
       callback: function () {
       $(window).resize(drawChart);
-      drawChart(res);                
+      drawChart(res);
+      makeBook(res);                
     },
     packages: ["calendar"]
     });      
@@ -22,8 +23,8 @@ const make_chart = function() {
   };
 
 
-make_chart();
-make_book();
+make_charts();
+// make_book();
 
 // function deploy_json() {
 
@@ -414,20 +415,24 @@ function makeBook(json_Obj) {
   //     bubble.style.left = `calc(${newVal}% + (${8 - newVal * 0.15}px))`;
   // }
 
-  var bubble_V = document.getElementById("bubble_date");            
+  // var bubble_V = document.getElementById("bubble_date");            
   
-  function bubbleOn() {
-      bubble_V.style.display = "block";
-      // bubble_V.style = "bubble";
-  }
-  function bubbleOff() {
-      // bubble_V.style = "bubble";
-      bubble_V.style.display = "none";
-  }
+  // function bubbleOn() {
+  //     bubble_V.style.display = "block";
+  //     // bubble_V.style = "bubble";
+  // }
+  // function bubbleOff() {
+  //     // bubble_V.style = "bubble";
+  //     bubble_V.style.display = "none";
+  // }
   // turn on/off slider bubble
   // slider.addEventListener('mousedown', bubbleOn);
   // slider.addEventListener('mouseup', bubbleOff);
-  // slider.addEventListener('wheel', bubbleOn);
+  // slider.addEventListener('wheel', bubbleOn);  
+  bookclick();
+  function bookclick() {
+    $("#bt_book").attr("onclick", "switchOn_b4()");
+  }
 }
 
 function addPage(page, json_Obj, count, book) {

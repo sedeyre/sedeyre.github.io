@@ -120,31 +120,33 @@ body {
   margin-right: 4%;
   animation: fadeIn ease 5s; 
 }
+
 .container {
-  padding-left: 1.2vw;
-  padding-bottom: 1.2vw;
-  padding-top: 1.2vw;
+  padding-left: 1vw;
+  padding-bottom: 1vw;
+  padding-top: 1vw;
   display: flex;
   align-items:flex-start;
   justify-content: center;
 }
 img {
   border-radius: 0.5vw;
-  max-width: 16vw
+  max-width: 15vw
 }
 .image {
   flex-basis: 0%;
   order: 0;
   
 }
-.text {
+.chart_verse {
   flex-basis: 100%; 
-  color: #CD5C5C;  
+  color: #CD5C5C;
   padding-left: 2vw;
-  font: italic 1vw "Fira Sans", serif;
+  font: 0.9vw "Fira Sans", serif;
 }
 #event_ {
- padding-top: 3vw;
+ padding-top: 3.4vw;
+ font: 0.8vw "Fira Sans", serif;
 }
 
 .google-visualization-tooltip { 
@@ -155,7 +157,7 @@ img {
   width: auto !important;
   overflow:hidden !important;
   padding-right: 2.1vw !important;
-  margin-block: -5vw !important;
+  margin-block: -1vw !important;
   box-shadow: 1vw 0.8vw 0.7vw 0.1vw rgba(10, 10, 10, 0.75) !important;
   border-color: rgba(0, 235, 252, 0.807) !important;
   border-radius: 1vw !important; 
@@ -185,15 +187,17 @@ img {
 .wrapper {
   align-items: center;
   display: flex;
-  height: 90%;
-  justify-content: center;
-  margin: 5%;
-  width: 90%;
+  height: 100%;
+  justify-content: center;  
+  width: 100%;
+  padding-left: 25%;
+  padding-top: 5%;
 }
 .aspect {
   padding-bottom: 70%;
   position: relative;
   width: 100%;
+  
 }
 .aspect-inner {
   bottom: 0;
@@ -201,6 +205,8 @@ img {
   position: absolute;
   right: 0;
   top: 0;
+  width: 95%;
+  height: 95%;
 }
 
 .book_0{    
@@ -217,7 +223,7 @@ img {
 }
 
 .book_1{    
-  height: 70%;
+  height: 75%;
   visibility: visible;
   transition: margin-left 0.25s ease-out;
   width: 75%;
@@ -248,6 +254,10 @@ img {
   padding-top: 20%;
 }
 .date {
+  padding-top: 25%;
+  padding-left: 15%;
+}
+.name {
   padding-top: 25%;
   padding-left: 15%;
 }
@@ -310,22 +320,26 @@ img {
 } */
 
 .slidecontainer {
-/* margin-top: 4%; */
 margin-top: 7%;
 margin-left: 22.5%;
-width: 30%; /* Width of the outside container */
+width: 33%; /* Width of the outside container */
 }
 
 .slider {
 -webkit-appearance: none;
 appearance: none;
 width: 100%;
-height: 12px;
+height: 2px;
 background: #d3d3d3;
 outline: none;
-opacity: 0.7;
--webkit-transition: .2s;
-transition: opacity .2s;
+opacity: 0.1;
+-webkit-transition: .9s;
+transition: opacity 1.3s;
+}
+
+#slideRange {
+  visibility: visible;
+  animation: fadeIn 1s;
 }
 
 .slider:hover {
@@ -343,7 +357,7 @@ cursor: pointer;
 
 .slider::-moz-range-thumb {
 width: 25px;
-height: 12px;
+height: 11px;
 background: #04AA6D;
 cursor: pointer;
 }
