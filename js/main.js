@@ -13,7 +13,7 @@ const make_charts = function() {
   get_Json.then(function(res) {
     google.charts.load('current', {
       callback: function () {
-      $(window).resize(drawChart);
+      // $(window).resize(drawChart);
       drawChart(res);
       makeBook(res);                
     },
@@ -21,7 +21,6 @@ const make_charts = function() {
     });      
   });
   };
-
 
 make_charts();
 // make_book();
@@ -462,7 +461,7 @@ function addPage(page, json_Obj, count, book) {
 window.addEventListener('resize', function (e) {
   var chart = document.getElementById("calendar_basic");
   if (chart.style.display == "block") {
-    make_chart();
+    make_charts();
   }
   else {
     var book = document.getElementById("book");

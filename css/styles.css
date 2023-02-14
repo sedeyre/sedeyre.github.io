@@ -126,27 +126,28 @@ body {
   padding-bottom: 1vw;
   padding-top: 1vw;
   display: flex;
-  align-items:flex-start;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: left;
 }
 img {
   border-radius: 0.5vw;
   max-width: 15vw
 }
 .image {
-  flex-basis: 0%;
-  order: 0;
+  padding-left: 8vw;
+  padding-right: 1vw;
+  flex-basis: 42%;
+  order: 1;
   
 }
 .chart_verse {
   flex-basis: 100%; 
-  color: #CD5C5C;
-  padding-left: 2vw;
+  color: #CD5C5C;  
   font: 0.9vw "Fira Sans", serif;
 }
 #event_ {
- padding-top: 3.4vw;
- font: 0.8vw "Fira Sans", serif;
+ padding-top: 2.5vw;
+ font: 0.7vw "Fira Sans", serif;
 }
 
 .google-visualization-tooltip { 
@@ -156,12 +157,12 @@ img {
   height:auto !important;
   width: auto !important;
   overflow:hidden !important;
-  padding-right: 2.1vw !important;
+  padding-left: 0.5vw !important;
   margin-block: -1vw !important;
   box-shadow: 1vw 0.8vw 0.7vw 0.1vw rgba(10, 10, 10, 0.75) !important;
   border-color: rgba(0, 235, 252, 0.807) !important;
   border-radius: 1vw !important; 
-  font-size:  1vw !important;
+  font-size:  0.9vw !important;
   animation: fadeIn ease 0.9s;   
  }
 
