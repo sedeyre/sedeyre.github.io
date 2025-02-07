@@ -81,7 +81,7 @@ make_charts();
 function drawChart(json_obj) {
 
   var width = document.documentElement.clientWidth; // making chart responsive  
-  var height = document.documentElement.clientHeight;
+  var height = width*1.5;
 
   var dataTable = new google.visualization.DataTable();
 
