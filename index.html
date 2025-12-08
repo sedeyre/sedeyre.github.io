@@ -7,19 +7,21 @@
     <meta http-equiv='cache-control' content='no-cache'>
     <meta http-equiv='expires' content='0'>
     <meta http-equiv='pragma' content='no-cache'>
-    <title>start</title>
+    <title>xnsmn</title>
     
     <link rel="stylesheet" href="css/styles.css">   
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+ 
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>        
     <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <script src="js/turn.min.js"></script>
-    <script src="/js/main.js" defer></script>    
+    <!-- <script src="/js/turn.min.js"></script> -->
+    <script src="/js/main.js" defer></script>
+    <script src="/app/v3d.js"></script>  
     
  
     <body>
-        <div id="logo" class="logo_1">XENOSEMANTICA</div>
+        <div class="logo_1">XENOSEMANTICA</div>
         <!-- <div id="menu" class="menu_1">&gt;&gt;&gt;&gt;&gt; <button class="button" onclick="switchOn_b1()">what is xenosemantica</button> &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; <button class="button" onclick="switchOn_b2()">xnsmn pipeline</button> &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; <span id="b3">xnsmn ships</span> &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; <button id="bt_book" class="button" onclick="_">xnsmn book 'I stand on winter's night...'</button> &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; <span  id="b5">xnsmn sky</span> &gt;&gt;&gt;&gt;&gt;&gt; <span id="b6">xnsmn wall</span> &gt;&gt;&gt;&gt;&gt;&gt; <span id="b7">disclaims and answers</div> -->
         
         <!-- <div class="flex-container" id="blocks">        
@@ -32,9 +34,20 @@
     
         
         <div id="calendar_basic" class="calendar_basic_1" style="display: block;"></div>
+        <div id="calendar-shroud" style="display: none;"></div>
+        <div id="overlay_ship" style="display: none;">
+            <div id="closeOverlay">X</div>
+            <div id="fullscreen-button" class="fullscreen-button fullscreen-open" title="Toggle fullscreen mode"></div>     
+            <div id="v3d-container"></div>
+        </div>
 
+        <div id="overlay_regular" class="overlay_regular">
+                <div class="overlay_regular_content" id="overlay_regular_content"></div>
+        </div>
         
-        <div class="wrapper">
+        
+
+        <!-- <div class="wrapper">
           <div class="aspect">
               <div class="aspect-inner">
                   <div id="book" class="book_0">        
@@ -47,10 +60,10 @@
                       <output id="bubble_date" class="bubble"></output>       
                       <!-- <p><span id="volume"></span></p>
                       <p><span id="event_date"></span></p>         -->
-                  </div>  
+                  <!-- </div>  
               </div>
             </div>
-        </div>
+        </div> --> -->
     
   
     </body>

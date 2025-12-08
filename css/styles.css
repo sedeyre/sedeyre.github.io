@@ -15,7 +15,8 @@ body {
 .logo_1 {
   text-align: center;
   width: 100%;
-  margin-top: -3%;  
+  margin-top: -3.5%;
+  margin-bottom: -6%;
   font-family: 'Orbitron', sans-serif;
   font-weight: 100;
   font-size: 9.9vw;  
@@ -25,7 +26,7 @@ body {
   animation: fadeIn ease 2s;
 }
 
-.logo_0 {
+/* .logo_0 {
   text-align: center;
   width: 100%;
   margin-top: -3%;  
@@ -36,9 +37,9 @@ body {
   letter-spacing: -0.01vw;
   color: rgb(217, 216, 219);
   animation: fadeOut ease 1.2s;
-}
+} */
 
-.menu_1 {
+/* .menu_1 {
   font-family: "FreeMono", monospace;  
   text-align: justify;
   font-size: 2.4vw;
@@ -107,21 +108,21 @@ body {
   line-height: 1.5vw;
   font-size: 1.1vw;
   flex: 25%;
-}
+} */
 
-.calendar_basic_0{
+/* .calendar_basic_0{
   visibility: hidden;
-}
+} */
 
-.calendar_basic_1 { 
-  visibility: visible;  
-  margin-top: -4%;
-  margin-left: 1%;
-  margin-right: 4%;
-  animation: fadeIn ease 5s; 
+.calendar_basic_1 {
+  position: relative;
+  visibility: visible;
+  margin: -10%;
+  animation: fadeIn ease 5s;
 }
 
 .container {
+  width: 100%;
   padding-left: 1vw;
   padding-bottom: 1vw;
   padding-top: 1vw;
@@ -143,16 +144,17 @@ img {
 .chart_verse {
   flex-basis: 100%; 
   color: #CD5C5C;  
-  font: 0.9vw "Fira Sans", serif;
+  font: 1.5vw "Fira Sans", serif;
 }
 #event_ {
- padding-top: 2.5vw;
- font: 0.7vw "Fira Sans", serif;
+ padding-top: 4vw;
+ font: 1.vw "Fira Sans", serif;
+ color: #04AA6D; 
 }
 
 .google-visualization-tooltip { 
   pointer-events: none;
-  background-color: #0f0f12 !important;
+  background-color: #12030D !important;
   -webkit-text-fill-color: rgb(197, 194, 210);
   height:auto !important;
   width: auto !important;
@@ -163,7 +165,9 @@ img {
   border-color: rgba(0, 235, 252, 0.807) !important;
   border-radius: 1vw !important; 
   font-size:  0.9vw !important;
-  animation: fadeIn ease 0.9s;   
+  animation: fadeIn ease 0.9s;
+  /* opacity: 1;
+  transition: opacity 2s ease-out !important;  */
  }
 
 @keyframes fadeIn {
@@ -432,4 +436,154 @@ color: white;
   100% {
     opacity:0;
   }
+}
+
+
+
+/* Overlay styling */
+
+#closeOverlay {
+  position: absolute;
+  font-size: 3vh; 
+  color: #C4C4C4;
+  bottom: 2%;
+  right: 2%; 
+  display: block;
+  cursor: pointer;
+  animation: fadeIn ease 0.3s;
+  z-index:2000;
+}
+
+
+.overlay_regular {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 14, 26, 0.7);
+  display: none;
+  opacity: 0;
+  transition: opacity .9s ease;
+}
+
+.overlay_regular_content {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgb(15, 3, 18);
+  padding: 15px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  border-radius: 15px;
+  color: #e0d4d4;
+  box-shadow: 1vw 0.8vw 0.7vw 0.1vw rgba(10, 10, 10, 0.75);
+  border:#525251;
+  border-style: solid;
+  border-width: 0.1vw;
+}
+
+#overlay_ship {
+  position: fixed; top: 20vh; left: 25%; right: 25%; width: 50%; height: 50%;
+  background: rgba(8, 14, 26, 0.7);
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  border-radius: 15px;
+  box-shadow: 1vw 0.8vw 0.7vw 0.1vw rgba(10, 10, 10, 0.75);
+  animation: fadeIn ease 0.3s;
+  border:#525251;
+  border-style: solid;
+  border-width: 0.1vw;
+  z-index: 1000;
+}
+
+.v3d-container {
+  visibility: inherit;
+  position: absolute;
+  width: 100%;
+  height: 100%; 
+  padding: 10px;
+  border-radius: 13px; 
+  animation: fadeIn ease 3s;
+  z-index: 1000;
+}
+
+.fullscreen-button {
+  position: absolute;
+  top: 1.5%;
+  right: 2%;
+  cursor: pointer;
+  display: none;
+  z-index: 2000;
+  /* animation: fadeIn ease 3s; */
+}
+
+.fullscreen-open::before {
+  content: '▢';
+  font-size: 3vh; /* Adjust size as needed */
+  display: block;
+  text-align: center;  
+  color: #C4C4C4;
+  animation: fadeIn ease 3s;
+}
+
+.fullscreen-close::before {
+  content: 'X';
+  /* bottom: 50%; */
+  font-size: 3vh; /* Adjust size as needed */
+  display: block;
+  text-align: center;
+  color: #C4C4C4;
+  animation: fadeIn ease 3s;
+}
+
+
+
+/* custom preloader */
+
+.v3d-simple-preloader-logo {
+  display: none;
+}
+
+.v3d-simple-preloader-background {
+    /* Set the background to solid black */
+    background: black;
+    /* Optional: Remove any default background image/logo */
+    background-image: none; 
+}
+
+.v3d-simple-preloader-container a {
+    /* Sets the text color to black */
+    color: black !important;  
+}
+
+
+/* removes tap blinking on ios devices */
+* { -webkit-tap-highlight-color:rgba(0,0,0,0); }
+
+
+/* Calendar styling */
+#calendar_basic {
+  margin: 20px auto;
+}
+
+#calendar-shroud {
+    /* Critical: Covers the calendar area */
+    position: absolute; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 200%;
+    
+    /* Critical: Ensures it's on top of the calendar but below the Verge3D overlay */
+    z-index: 99; 
+    
+    /* Critical: Makes it invisible and ignores clicks */
+    /* background-color:transparent;  */
+    background-color: rgba(8, 14, 26, 0.7);
+    pointer-events: auto; /* Re-enables pointer events to intercept clicks */
+    animation: fadeIn ease 0.9s;
+    
+    /* Initial state: Hidden */
+    display: none;
 }

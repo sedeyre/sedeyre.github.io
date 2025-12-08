@@ -1,4 +1,9 @@
-const get_Json = fetch("https://sedeyre.github.io/json4datatable.json")
+// const get_Json = fetch("https://sedeyre.github.io/json4datatable.json")
+//   .then(function(response) {
+//       return response.json();
+//   });
+
+  const get_Json = fetch("json4datatable.json")
   .then(function(response) {
       return response.json();
   });
@@ -15,9 +20,9 @@ const make_charts = function() {
       callback: function () {
       // $(window).resize(drawChart);
       drawChart(res);
-      makeBook(res);                
+      // makeBook(res);                
     },
-    packages: ["calendar"]
+    packages: ["calendar"]  
     });      
   });
   };
@@ -25,74 +30,35 @@ const make_charts = function() {
 make_charts();
 // make_book();
 
-// function deploy_json() {
-
-    // const url2json = "https://sedeyre.github.io/json4datatable.json";
-    // // const url2json = "http://127.0.0.1:5500/sorted_dates.json";
-    
-    // var width = document.documentElement.clientWidth; // making chart responsive  
-    // var height = document.documentElement.clientHeight;
-
-    // let getJson = new Promise(function(data_OK) {
-    //   const xmlhttp = new XMLHttpRequest();              
-    //         xmlhttp.open("GET", url2json);
-    //         xmlhttp.onload = function() {
-    //           if (xmlhttp.status == 200) {
-    //             res = xmlhttp.responseText;
-    //             data_OK(JSON.parse(res));
-    //           } else {
-    //             nodata('no JSON');
-    //           }                       
-    //       };            
-    //       xmlhttp.send();   
-    //     });
-
-    // getJson.then(
-    //   function(json_obj) {
-    //     google.charts.load('current', {
-    //       callback: function () {
-    //       $(window).resize(drawChart, makeBook);
-    //       drawChart(json_obj);
-    //       makeBook(json_obj);          
-    //     },
-    //     packages: ["calendar"]
-    //     });
-    //     },      
-    // );
-    
-      
-        // <!--get data from local json-->
-        // function readTextFile(file, callback) {
-        //     var rawFile = new XMLHttpRequest();
-        //         rawFile.overrideMimeType("application/javascript");
-        //         rawFile.open("GET", file, true);
-        //         rawFile.onreadystatechange = function() {
-        //         if (rawFile.readyState === 4 && rawFile.status == "200") {
-        //             callback(rawFile.responseText);
-        //         }
-        //     }
-        //     rawFile.send(null);
-        // }
-
-        // readTextFile("./json4datatable.json", function(text) {
-        //     json_data = JSON.parse(text);
-        //     });
-
 function drawChart(json_obj) {
 
   var width = document.documentElement.clientWidth; // making chart responsive  
-  var height = width*1.5;
+  var height = width*0.85;
 
   var dataTable = new google.visualization.DataTable();
 
   dataTable.addColumn({ type: 'date', id: 'Date' });
   dataTable.addColumn({ type: 'number', id: 'Capture' });
-  dataTable.addColumn({ type: 'string', role: 'tooltip', p: { 'html': true } })
+  dataTable.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
+  dataTable.addColumn({ type: 'string', role: 'annotation' });
+  
   
   // populate chart datatable
   for (let x in json_obj) {
+    let d = new Date(json_obj[x].date);
+              let date_options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',  hour: 'numeric', minute: 'numeric'};
+              let date_ = d.toLocaleDateString('en-us', date_options);
+              let number__ = parseInt(d.getDate());
+              let number_mod = number__.addSuffix();
+              let date_mod = date_.replace(number__, number_mod);
+              
+    // Custom Tooltip HTML: Only shows the Date
+              let tooltipHTML = `<div style="padding: 8px 12px; white-space: nowrap;">
+                  <strong>${date_mod}</strong>
+              </div>`;
+
     dataTable.addRows([
-    [new Date(Date.parse(json_obj[x].date)), 1, createCustomHTMLContent(json_obj[x].img, json_obj[x].date, json_obj[x].name, json_obj[x].verse)]
+    [new Date(Date.parse(json_obj[x].date)), 1,tooltipHTML, createCustomHTMLContent(json_obj[x].img, date_mod, json_obj[x].name, json_obj[x].verse)]
     ]);
     }
 
@@ -104,7 +70,7 @@ function drawChart(json_obj) {
 
     legend: 'none',
     title: '',
-    focusTarget: 'category',            
+    focusTarget: 'none',       
     height: height,  
     width: width,          
 
@@ -113,11 +79,8 @@ function drawChart(json_obj) {
       values: [1,0]          
     },
 
-    tooltip: {
-      isHtml: true,
-      trigger: 'selection'
-    },
-
+    tooltip: { isHtml: true },
+    
     noDataPattern: {
       backgroundColor: '#161B26',
       color:  '#161B26'
@@ -144,14 +107,14 @@ function drawChart(json_obj) {
       },
 
       focusedCellColor: {
-        stroke: '#CE2932',
+        stroke: '#8cc0d0ff',
         strokeOpacity: 1,
         strokeWidth: 0
       },
 
       cellColor: {
         stroke: '#080e1a',      // Color the border of the squares.
-        strokeOpacity: 1, // Make the borders half transparent.
+        strokeOpacity: 0, // Make the borders half transparent.
         strokeWidth: cellSize_/3.5     // making chart responsive
       },
 
@@ -181,74 +144,454 @@ function drawChart(json_obj) {
     }
   };
 
-// hide chart heatmap legend in the upright  corner
-google.visualization.events.addListener(chart, 'ready', function () {
-  $($('#calendar_basic text')[0]).hide();
-  $($('#calendar_basic text')[1]).hide();
-  $($('#calendar_basic text')[2]).hide();
-  $('#calendar_basic linearGradient').hide();
-  $('#calendar_basic')
-    .find('[fill-opacity="1"]').hide();
-});
+  // hide chart heatmap legend in the upright  corner
+  google.visualization.events.addListener(chart, 'ready', function () {
+    $($('#calendar_basic text')[0]).hide();
+    $($('#calendar_basic text')[1]).hide();
+    $($('#calendar_basic text')[2]).hide();
+    $('#calendar_basic linearGradient').hide();
+    $('#calendar_basic')
+      .find('[fill-opacity="1"]').hide();
+  });
 
   chart.draw(dataTable, options);
+
+  // Add click event listener
+ google.visualization.events.addListener(chart, 'select', () => {
+    let sel = chart.getSelection();
+    if (!sel.length) return;
+
+    let row = sel[0].row;
+    if (row == null) return;
+
+    if (json_obj[row] && json_obj[row].ship) {
+      openOverlay(json_obj[row].ship);
+      return;
+    } 
+
+    let html = dataTable.getValue(row, 3);
+    if (html) {
+      openOverlay_regular(html);
+    }
+  });
+
 }
 
+// adding the ordinal suffix, turning 1, 2 and 3 into 1st, 2nd and 3rd
+Number.prototype.addSuffix = function() {
+  var n = this.toString().split('.')[0];
+  var lastDigits = n.substring(n.length - 2);
+  //add exception just for 11, 12 and 13
+  if(lastDigits==='11' || lastDigits==='12' || lastDigits==='13'){
+      return this+'<sup>th</sup>';
+  }
+  switch(n.substring(n.length - 1)) {
+      case '1': return this+'<sup>st</sup>';
+      case '2': return this+'<sup>nd</sup>';
+      case '3': return this+'<sup>rd</sup>';
+      default : return this+'<sup>th</sup>';
+  }
+};
+
+function fadeOut(element) {
+  element.style.opacity = '0'; // Start fade out
+  setTimeout(() => {
+      element.style.display = 'none'; // Hide after transition
+  }, 500); // Matches transition duration (0.5s)
+}
 
 function createCustomHTMLContent(imgURL, event_time, event, verse) {
   
   return '<div class="container">' + 
     '<div class="image">' + '<img src="' + imgURL + '">' +
     '</div>' +    
-      '<div class="text">'+'<p>'+verse+'</p>'+'<p id="event_">'+event+'<br/>'+event_time+'</p>'+
+      '<div class="text">'+'<p>'+verse+'</p>'+'<p id="event_">'+'Sky object '+event+'<br/>'+event_time+'</p>'+
       '</div>' +        
-      // '<div id="name-date">' + event + '<br/>' + event_time +        
-      // '</div>'+
   '</div>';              
 }
 
-// function makeBook(json_obj) {
-
-//   var count = -1;
-//   var entries_count = json_obj.length;
-
-//   $("#book").turn({pages: 400,                                                  
-//                   duration: 2000,
-//                   gradients: true,                             
-//                   autoCenter: false});
-
-//   $('#book').bind('turning', function(event, page) {            
-
-//       count++;
-
-//       var range = $(this).turn('range', page);           
-//       for (var page = range[0]; page<=range[1]; page++){                
-//           addPage(page, json_obj, count, $(this));}
-//       });
-//   }
-
-// function addPage(page, json_obj, count, book) {
+// Function to remove the specific element
+function removeSpecificElement() {
+  // Select the element using a query selector
   
-//   let page_data = json_obj[count];  
-  
-//   if (!book.turn('hasPage', page)) {
+
+  // Check if the element exists
+  if (document.querySelector('a[href="https://www.soft8soft.com/verge3d-trial/"]')) {
+    // element.style.color = 'black';
+    // Remove the element from its parent node
+    var element = document.querySelector('a[href="https://www.soft8soft.com/verge3d-trial/"]');
+    element.parentNode.removeChild(element);
+    element.classList.remove('hidden-by-script');
+  return;
+  }
+}
+
+/**
+ * Tracks the currently active Verge3D application instance. 
+ * Initialized to null, and used to check if a previous app needs disposing.
+ */
+let activeAppInstance = null;
+
+function openOverlay(ship_path) {
+    // 1. Dispose of the previous app if it exists
+    if (activeAppInstance) {
+        console.log('Disposing previous Verge3D application instance...');
+        closeOverlayAndDisposeApp();
+        activeAppInstance = null;
+    }
+
+    // ACTIVATE THE SHROUD to prevent clicking on cells when app is active which may cause webGL issues
+    const shroud = document.getElementById('calendar-shroud');
+    if (shroud) {
+        shroud.style.display = 'block';
+    }
+
+    const params = v3d.AppUtils.getPageParams();
+
+    // 2. The createApp function will now handle setting and returning the instance
+    createApp({
+        containerId: 'v3d-container',
+        fsButtonId: 'fullscreen-button',
+        sceneURL: params.load || ship_path,
+        logicURL: params.logic || 'app/visual_logic.js',
+    }).then(result => {
+        if (result && result.app) {
+            // Store the new active instance and its associated variables
+            activeAppInstance = {
+                app: result.app,
+                PL: result.PL,
+                PE: result.PE,
+                disposeFullscreen: result.disposeFullscreen
+            };
+            
+            // Now that the app is active, set up the close button listener
+            setupCloseOverlayListener();
+        }
+    });
+
+    const overlay_ship = document.getElementById('overlay_ship');
+    // Display the overlay
+    overlay_ship.style.display = 'block';
+    requestAnimationFrame(() => {
+    overlay_ship.style.opacity = '1';
+    hideCalendarHoverLabel(); // hide calendar hover label
+  }); 
+    
+}
+
+/**
+ * Disposes the active Verge3D application and hides the overlay.
+ * This is the crucial step to free up WebGL context and memory.
+ */
+function closeOverlayAndDisposeApp() {
+    if (activeAppInstance && activeAppInstance.app) {
+        activeAppInstance.app.dispose(); // Primary memory/context release call
+        
+        // Remove the fullscreen event listeners
+        if (activeAppInstance.disposeFullscreen) {
+            activeAppInstance.disposeFullscreen();
+        }
+        
+        console.log('Verge3D application disposed successfully.');
+    }
+    
+    // Reset the persistent reference
+    activeAppInstance = null;
+    
+    // Hide the overlay
+    const overlay_ship = document.getElementById('overlay_ship');
+    if (overlay_ship) {
+        overlay_ship.style.display = 'none';
+    }
+    
+    // Clean up the container's content (optional, but good practice)
+    const container = document.getElementById('v3d-container');
+    if (container) {
+        container.innerHTML = '';
+
+    // ⭐ DEACTIVATE THE SHROUD
+    const shroud = document.getElementById('calendar-shroud');
+    if (shroud) {
+        shroud.style.display = 'none';
+      }
+    }
+}
+
+/**
+ * Sets up the event listener for the close button.
+ */
+function setupCloseOverlayListener() {
+   const button_closeoverlay = document.getElementById('closeOverlay');
+    
+    // ⭐ FIX: Check if the element exists before accessing its properties.
+    if (button_closeoverlay) {
+        // Ensure the listener is only attached once
+        button_closeoverlay.onclick = closeOverlayAndDisposeApp;
+        
+    } else {
+        console.error("Error: Could not find element with ID 'closeOverlay'. The close button listener was not set.");
+        // If the button is truly critical, you might want to stop further execution or handle the UI differently.
+    }
+}
+
+async function createApp({containerId, fsButtonId = null, sceneURL, logicURL = ''}) {
+    if (!sceneURL) {
+        console.log('No scene URL specified');
+        return;
+    }
+
+    v3d.Cache.enabled = true;
+
+    let PL = null, PE = null;
+    // ... (Logic for loading PuzzlesLoader - PL and PE remains the same)
+    if (v3d.AppUtils.isXML(logicURL)) {
+        const PUZZLES_DIR = '/puzzles/';
+        const logicURLJS = logicURL.match(/(.*)\.xml$/)[1] + '.js';
+        PL = await new v3d.PuzzlesLoader().loadEditorWithLogic(PUZZLES_DIR, logicURLJS);
+        PE = v3d.PE;
+    } else if (v3d.AppUtils.isJS(logicURL)) {
+        PL = await new v3d.PuzzlesLoader().loadLogic(logicURL);
+    }
+
+    let initOptions = { useFullscreen: true };
+    if (PL) {
+        initOptions = PL.execInitPuzzles({ container: containerId }).initOptions;
+    }
+    sceneURL = initOptions.useCompAssets ? `${sceneURL}.xz` : sceneURL;
+
+    const disposeFullscreen = prepareFullscreen(containerId, fsButtonId,
+            initOptions.useFullscreen);
+    
+    const preloader = createPreloader(containerId, initOptions, PE);
+
+    const app = createAppInstance(containerId, initOptions, preloader, PE);
+    
+    if (initOptions.preloaderStartCb) initOptions.preloaderStartCb();
+    
+    app.loadScene(sceneURL, () => {
+        app.enableControls();          
+        app.run();
+        
       
-//               if (page % 2==0){                        
-//                   if (page == 6) {  // prevent repeating the previous image, no idea why it goes that way  
-//                       page_data = json_obj[1];
-//                   }
-//                   let html = `<img src=${page_data.img} class="insights">`; 
-//                   var elementImage = $("<div />").html(html);
-//                   book.turn('addPage', elementImage, page);                                             
-//               }
-//               else {
-//                   let html = `<p class="verse">${page_data.verse} + \n + ${page_data.date}</p>`;                     
-//                   var element = $("<div />").html(html);
-//                   book.turn('addPage', element, page);                  
-//               }                           
-//      }
-//   }
+        // runCode() logic is now handled by the persistent setupCloseOverlayListener
+        
+        if (PE) PE.updateAppInstance(app);
+        if (PL) PL.init(app, initOptions);
 
+        removeSpecificElement();
+
+    }, null, () => {
+        console.log(`Can't load the scene ${sceneURL}`);
+    });
+
+    // Return the instance, PL, PE, and dispose function for external management
+    return { app, PL, PE, disposeFullscreen };
+}
+
+function createPreloader(containerId, initOptions, PE) {
+    const preloader = initOptions.useCustomPreloader
+            ? createCustomPreloader(initOptions.preloaderProgressCb,
+            initOptions.preloaderEndCb)
+            : new v3d.SimplePreloader({ container: containerId });              
+
+    if (PE) puzzlesEditorPreparePreloader(preloader, PE);
+
+    return preloader;
+}
+
+function createCustomPreloader(updateCb, finishCb) {
+    class CustomPreloader extends v3d.Preloader {
+        constructor() {
+            super();
+        }
+
+        onUpdate(percentage) {
+            super.onUpdate(percentage);
+            if (updateCb) updateCb(percentage);
+        }
+
+        onFinish() {
+            super.onFinish();
+            if (finishCb) finishCb();
+        }
+    }
+
+    return new CustomPreloader();
+}
+
+/**
+ * Modify the app's preloader to track the loading process in the Puzzles Editor.
+ */
+function puzzlesEditorPreparePreloader(preloader, PE) {
+  const _onUpdate = preloader.onUpdate.bind(preloader);
+  preloader.onUpdate = function(percentage) {
+      _onUpdate(percentage);
+      PE.loadingUpdateCb(percentage);
+  }
+
+  const _onFinish = preloader.onFinish.bind(preloader);
+  preloader.onFinish = function() {
+      _onFinish();
+      PE.loadingFinishCb();
+  }
+}
+
+function createAppInstance(containerId, initOptions, preloader, PE) {
+const ctxSettings = {};
+if (initOptions.useBkgTransp) ctxSettings.alpha = true;
+if (initOptions.preserveDrawBuf) ctxSettings.preserveDrawingBuffer = true;
+
+const app = new v3d.App(containerId, ctxSettings, preloader);
+if (initOptions.useBkgTransp) {
+    app.clearBkgOnLoad = true;
+    if (app.renderer) {
+        app.renderer.setClearColor(0x000000, 0);
+    }
+}
+
+// namespace for communicating with code generated by Puzzles
+app.ExternalInterface = {};
+prepareExternalInterface(app);
+if (PE) PE.viewportUseAppInstance(app);
+
+return app;
+}
+
+function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
+const container = document.getElementById(containerId);
+const fsButton = document.getElementById(fsButtonId);
+
+if (!fsButton) {
+  return null;
+}
+if (!useFullscreen) {
+  if (fsButton) fsButton.style.display = 'none';
+  return null;
+}
+
+const fsEnabled = () => document.fullscreenEnabled
+      || document.webkitFullscreenEnabled
+      || document.mozFullScreenEnabled
+      || document.msFullscreenEnabled;
+const fsElement = () => document.fullscreenElement
+      || document.webkitFullscreenElement
+      || document.mozFullScreenElement
+      || document.msFullscreenElement;
+const requestFs = elem => (elem.requestFullscreen
+      || elem.mozRequestFullScreen
+      || elem.webkitRequestFullscreen
+      || elem.msRequestFullscreen).call(elem);
+const exitFs = () => (document.exitFullscreen
+      || document.mozCancelFullScreen
+      || document.webkitExitFullscreen
+      || document.msExitFullscreen).call(document);
+const changeFs = () => {
+  const elem = fsElement();
+  fsButton.classList.add(elem ? 'fullscreen-close' : 'fullscreen-open');
+  fsButton.classList.remove(elem ? 'fullscreen-open' : 'fullscreen-close');
+
+  // Update the visibility of the closeOverlay button
+  const button = document.getElementById('closeOverlay');
+  if (button) {
+      button.style.display = elem ? 'none' : 'block';
+}    
+  // Manually trigger resize event
+  window.dispatchEvent(new Event('resize'));    
+};
+
+function fsButtonClick(event) {
+let button = document.getElementById('closeOverlay');
+  event.stopPropagation();
+  if (fsElement()) {
+    button.style.display = 'block';
+      exitFs();
+  } else {
+    button.style.display = 'none';
+      requestFs(container);
+  }
+  // Manually trigger resize event
+  window.dispatchEvent(new Event('resize'));
+}
+
+if (fsEnabled()) {
+fsButton.style.display = 'inline';
+}
+else {
+let button = document.getElementById('closeOverlay');
+button.style.display = 'block';
+}
+
+fsButton.addEventListener('click', fsButtonClick);
+document.addEventListener('webkitfullscreenchange', changeFs);
+document.addEventListener('mozfullscreenchange', changeFs);
+document.addEventListener('msfullscreenchange', changeFs);
+document.addEventListener('fullscreenchange', changeFs);
+
+const disposeFullscreen = () => {
+  fsButton.removeEventListener('click', fsButtonClick);
+  document.removeEventListener('webkitfullscreenchange', changeFs);
+  document.removeEventListener('mozfullscreenchange', changeFs);
+  document.removeEventListener('msfullscreenchange', changeFs);
+  document.removeEventListener('fullscreenchange', changeFs);
+}
+
+return disposeFullscreen;
+}
+
+/**
+ * Sets up the ExternalInterface namespace on the app instance 
+ * for communication with Verge3D Puzzles.
+ */
+function prepareExternalInterface(app) {
+ 
+}
+
+function openOverlay_regular(html) {
+  const overlay = document.getElementById('overlay_regular');
+  const content = document.getElementById('overlay_regular_content');
+
+  if (!overlay || !content) {
+    console.error('Overlay elements not found.');
+    return;
+  }
+
+  // Insert your custom HTML
+  content.innerHTML = html;
+
+  // Show overlay
+  overlay.style.display = 'block';
+  requestAnimationFrame(() => {
+    overlay.style.opacity = '1';
+    hideCalendarHoverLabel(); // hide calendar hover label
+  });
+
+  // Remove previous listener to avoid duplicates
+  content.onmouseleave = null;
+
+  // Close overlay when mouse leaves the content box
+  content.addEventListener('mouseleave', () => {
+    // fade out overlay
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      showCalendarHoverLabel(); // restore calendar hover label
+    }, 200);
+  }, { once: true });
+}
+
+function hideCalendarHoverLabel() {
+  const labels = document.querySelectorAll('#calendar_basic .google-visualization-tooltip');
+  labels.forEach(el => {
+    el.style.display = 'none';
+  });
+}
+
+function showCalendarHoverLabel() {
+  const labels = document.querySelectorAll('#calendar_basic .google-visualization-tooltip');
+  labels.forEach(el => {
+    el.style.display = '';
+  });
+}
 
 function switchOn_b1() {  
 
@@ -259,7 +602,6 @@ function switchOn_b1() {
 
   document.getElementById("book").className = "book_0";
 }  
-
 function switchOn_b2() {
 
   document.getElementById("blocks").style.display = "none";
@@ -270,7 +612,6 @@ function switchOn_b2() {
 
   document.getElementById("book").className = "book_0";  
 }
-
 function switchOn_b4() {
 
   document.getElementById("blocks").style.display = "none";
@@ -284,7 +625,6 @@ function switchOn_b4() {
   setTimeout(book_on, 1200);
   
 }
-
 function menu_none() {
   document.getElementById("menu").style.display = "none";
 }
@@ -298,7 +638,6 @@ function calendar_on() {
   document.getElementById("calendar_basic").className = "calendar_basic_1";
   document.getElementById("calendar_basic").style.display ="block";
 }
-
 function makeBook(json_Obj) {      
 
   var count = -1;
@@ -433,7 +772,6 @@ function makeBook(json_Obj) {
     $("#bt_book").attr("onclick", "switchOn_b4()");
   }
 }
-
 function addPage(page, json_Obj, count, book) {
   
   let page_data = json_Obj[count];
@@ -455,8 +793,7 @@ function addPage(page, json_Obj, count, book) {
               book.turn('addPage', elementVerse, page);                       
           }                                          
      }
-  }
-
+}
 // make responsive
 window.addEventListener('resize', function (e) {
   var chart = document.getElementById("calendar_basic");
@@ -470,7 +807,4 @@ window.addEventListener('resize', function (e) {
     $(book).turn('size', book.clientWidth, book.clientHeight);
   }
 });
-
-
-
 
