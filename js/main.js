@@ -330,7 +330,7 @@ function setupCloseOverlayListener() {
         
     } else {
         console.error("Error: Could not find element with ID 'closeOverlay'. The close button listener was not set.");
-        // If the button is truly critical, you might want to stop further execution or handle the UI differently.
+        
     }
 }
 
@@ -340,7 +340,7 @@ async function createApp({containerId, fsButtonId = null, sceneURL, logicURL = '
         return;
     }
 
-    v3d.Cache.enabled = true;
+    v3d.Cache.enabled = false;
 
     let PL = null, PE = null;
     // ... (Logic for loading PuzzlesLoader - PL and PE remains the same)
