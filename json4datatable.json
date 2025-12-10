@@ -3621,5 +3621,17 @@
         },
         "sequence": "00075510043",
         "ship": "/app/glbs/00075510043.glb"
+    },
+    {
+        "date": "2025-12-10T00:32:57",
+        "name": "WFSTJ0740",
+        "verse": "curtain of falling wave and wind<br/>where time is drowned in odour<br/>by the glance of a dwindled sphere<br/>fruits laid in earth<br/>that overshot the moon<br/>and fed of unhuman sleep",
+        "img": "assets/insights/9f6bab94941085ee4576a0fc5f71038206debffad4c775034d03facbe171bf91.jpg",
+        "coords": {
+            "RA_OBJ": 115.261416052992,
+            "DEC_OBJ": 16.5316987050729
+        },
+        "sequence": "00019615043",
+        "ship": "/app/glbs/00019615043.glb"
     }
 ]
