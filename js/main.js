@@ -1,3 +1,11 @@
+// main.js
+
+// =====================================================================
+// === GLOBAL VARIABLES & INITIAL DATA FETCH ===
+// =====================================================================
+let global_json_data = null;
+let resizeTimer; 
+
 const get_Json = fetch("json4datatable.json")
 .then(function(response) {
     return response.json();
@@ -5,6 +13,9 @@ const get_Json = fetch("json4datatable.json")
 
 const make_charts = function() {
   get_Json.then(function(res) {
+    // Store data globally for use in the resize handler
+    global_json_data = res; 
+    
     google.charts.load('current', {
       callback: function () {
       drawChart(res);              
@@ -363,13 +374,29 @@ function setupCloseOverlayListener() {
 }
 
 // =====================================================================
-// === CALENDAR/BOOK FUNCTIONS (The rest of the original code) ===
+// === CALENDAR/BOOK FUNCTIONS 
 // =====================================================================
 
 function drawChart(json_obj) {
+  
+  // --- 1. Dynamic Height Calculation Logic ---
+
+  // 1a. Count the unique years in the dataset
+  const years = new Set();
+  json_obj.forEach(item => {
+      if (item.date) {
+          years.add(new Date(item.date).getFullYear());
+      }
+  });
+  const numberOfYears = years.size;
+  if (numberOfYears === 0) {
+      console.warn('No data found to draw calendar chart.');
+      return; 
+  }
+  // ---------------------------------------------
 
   var width = document.documentElement.clientWidth; // making chart responsive  
-  var height = width*0.85;
+  // var height = document.documentElement.clientHeight; // Removed, using calculated height
 
   var dataTable = new google.visualization.DataTable();
 
@@ -401,13 +428,24 @@ function drawChart(json_obj) {
   var chart = new google.visualization.Calendar(document.getElementById('calendar_basic'));
 
   let cellSize_ = width/56; // making chart responsive
+  
+  // 1b. Calculate the estimated required height
+  const CALENDAR_HEIGHT_MULTIPLIER = 8.7; // Empirical multiplier for 1 year's height based on cellSize_
+  const underYearSpace = 12; // From your options: calendar.underYearSpace
+  
+  // Height for one year block: (Multiplier * CellSize) + UnderYearSpace
+  const heightPerYearBlock = (CALENDAR_HEIGHT_MULTIPLIER * cellSize_) + underYearSpace;
+  
+  // Total Estimated Height: (Number of Years * Height per Year Block) + small padding reserve
+  var estimatedHeight = (numberOfYears * heightPerYearBlock) + 20;
+
 
   var options = {
 
     legend: 'none',
     title: '',
     focusTarget: 'none',       
-    height: height,  
+    height: estimatedHeight, // <-- CRITICAL CHANGE: Use the calculated height
     width: width,          
 
     colorAxis: {
@@ -426,7 +464,7 @@ function drawChart(json_obj) {
       backgroundColor:'black',          
       cellSize: cellSize_,     // making chart responsive      
       daysOfWeek: 'smtwtfs',
-      underYearSpace: 12,
+      underYearSpace: underYearSpace,
       dayOfWeekRightSpace: 12,
       underMonthSpace: 10,            
 
@@ -456,7 +494,7 @@ function drawChart(json_obj) {
 
       dayOfWeekLabel: {
         fontName: 'Courier New',
-        fontSize: 16,
+        // fontSize: 16,
         color: '#D1CDCA',
         bold: false,
         italic: false,
@@ -464,7 +502,7 @@ function drawChart(json_obj) {
 
       monthLabel: {
         fontName: 'Courier New',
-        fontSize: 17,
+        // fontSize: 17,
         color: '#D1CDCA',
         bold: false,
         italic: false
@@ -472,7 +510,7 @@ function drawChart(json_obj) {
 
       yearLabel: {
         fontName: 'Courier New',
-        fontSize: 20,
+        // fontSize: 20,
         color: '#D1CDCA',
         bold: false,
         italic: false
@@ -603,217 +641,24 @@ function showCalendarHoverLabel() {
   });
 }
 
-function switchOn_b1() {  
-
-  document.getElementById("calendar_basic").className = "calendar_basic_0";
-
-  document.getElementById("blocks").style.display = "flex"; 
-  document.getElementById("blocks").style.visibility = "visible";
-
-  document.getElementById("book").className = "book_0";
-}  
-function switchOn_b2() {
-
-  document.getElementById("blocks").style.display = "none";
-  document.getElementById("menu").className = "menu_0";
-
-  setTimeout(menu_none, 500);
-  setTimeout(calendar_on, 600);
-
-  document.getElementById("book").className = "book_0";  
-}
-function switchOn_b4() {
-
-  document.getElementById("blocks").style.display = "none";
-  document.getElementById("calendar_basic").style.display ="none";
-
-  document.getElementById("menu").className = "menu_0";
-  document.getElementById("logo").className = "logo_0";
-
-  setTimeout(menu_none, 500);
-  setTimeout(logo_none, 500);
-  setTimeout(book_on, 1200);
-  
-}
-function menu_none() {
-  document.getElementById("menu").style.display = "none";
-}
-function logo_none() {
-  document.getElementById("logo").style.display = "none";
-}
-function book_on() {
-  document.getElementById("book").className = "book_1";
-}
-function calendar_on() {
-  document.getElementById("calendar_basic").className = "calendar_basic_1";
-  document.getElementById("calendar_basic").style.display ="block";
-}
-function makeBook(json_Obj) {      
-
-  var count = -1;
-  var entries_count = json_Obj.length;
-  // define number of pages + n-starters
-  var last_page = (entries_count * 2) +3;
-  // define overall number of slider's range + n-closers
-  $("input").attr('max', last_page +4);
-
-  var slider = document.getElementById("slideRange");
-  var output = document.getElementById("volume");
-  var eventdate = document.getElementById("event_date");     
-  // output.innerHTML = slider.value;
-  // eventdate.innerHTML = "date";        
-
-  $("#book").turn({
-                  pages: last_page,                                                  
-                  duration: 2000,
-                  gradients: true,
-                  turnCorners: "bl,br",
-                  elevation: 100,                           
-                  autoCenter: true});      
-
-  for (let page = 4; page <= last_page; page++) {
-         
-      if ((page % 2) == 0) {
-          count++;                   
-          addPage(page, json_Obj, count, $("#book"));   
-      }
-      else {
-          if (page == 5) {
-              let count_odd = count;
-              addPage(page, json_Obj, count_odd, $("#book"));
-          }
-          else {
-              let count_odd = count;
-              addPage(page, json_Obj, count_odd, $("#book"));
-          }
-      }
-  }
-
-  // add closers
-  var last_page0 = last_page +1;
-  var last_page1 = last_page +2;
-  var last_page2 = last_page +3;          
-
-  let html_page_last = ``;                                      
-              var element = $("<div />").html(html_page_last).addClass("page");
-  let html_hard0 = ``;                                      
-              var element_hard0 = $("<div />").html(html_hard0).addClass("hard");
-  let html_hard1 = ``;                                      
-              var element_hard1 = $("<div />").html(html_hard1).addClass("hard");
-  
-  $("#book").turn("addPage", element, last_page0);
-  $("#book").turn("addPage", element_hard0, last_page1);
-  $("#book").turn("addPage", element_hard1, last_page2);      
-
-  slider.oninput = function() {
-      let page_ = this.value;
-      // make last odd closer page accesable: 
-      // if step="2" we can't see the third (even) closer page as a last odd page is NaN  
-      if (page_ == last_page +4) {
-          page_ = last_page +3;
-          $("#book").turn("page", page_);
-      }
-      else {
-          // output.innerHTML = this.value;
-          $("#book").turn("page", page_);                
-      }
-  }
-
-  // $("#book").bind("turning", function (event, page) {
-  //     $("input[type=range]").val(page);
-  //     // output.innerHTML = page;
-  //     // eventdate.innerHTML = $(`#${page}`).text();                 
-  // })
-
-  // $("#book").bind("turned", function(event, page) {            
-      // eventdate.innerHTML = $(`#${page}`).text();
-      // bubbleOff();
-  // })
-
-  // const allRanges = document.querySelectorAll(".slidecontainer");
-  //     allRanges.forEach(wrap => {
-  //     const range = wrap.querySelector(".slider");
-  //     const bubble = wrap.querySelector(".bubble");
-
-  //     range.addEventListener("input", () => {
-  //         setBubble(range, bubble);
-  //     });
-  //     setBubble(range, bubble);
-  //     });
-
-  // function setBubble(range, bubble) {
-  //     const val = range.value;
-  //     const min = range.min ? range.min : 0;
-  //     const max = range.max ? range.max : 100;
-  //     const newVal = Number(((val - min) * 22) / (max - min));
-  //     let p = $("#book").turn("page");
-  //     if (val == 1) {
-  //         bubble.innerHTML = "Cover";
-  //     }
-  //     else {
-  //         if (val == 3) {
-  //         bubbleOff();
-  //     }
-  //         else {
-  //         bubbleOn();
-  //         bubble.innerHTML = $(`#${p}`).text();
-  //         }
-  //     }            
-  //     // Sorta magic numbers based on size of the native UI thumb
-  //     bubble.style.left = `calc(${newVal}% + (${8 - newVal * 0.15}px))`;
-  // }
-
-  // var bubble_V = document.getElementById("bubble_date");            
-  
-  // function bubbleOn() {
-  //     bubble_V.style.display = "block";
-  //     // bubble_V.style = "bubble";
-  // }
-  // function bubbleOff() {
-  //     // bubble_V.style = "bubble";
-  //     bubble_V.style.display = "none";
-  // }
-  // turn on/off slider bubble
-  // slider.addEventListener('mousedown', bubbleOn);
-  // slider.addEventListener('mouseup', bubbleOff);
-  // slider.addEventListener('wheel', bubbleOn);  
-  bookclick();
-  function bookclick() {
-    $("#bt_book").attr("onclick", "switchOn_b4()");
-  }
-}
-function addPage(page, json_Obj, count, book) {
-  
-  let page_data = json_Obj[count];
-
-  if (!book.turn('hasPage', page)) {
-
-      if (page % 2==0) {
-                  
-              let html = `<img src=${page_data.img} class="insights">`; 
-              var elementImage = $("<div />").html(html);
-              book.turn('addPage', elementImage, page);                                             
-          }
-
-      else {
-  
-              let html = `<p class="verse">${page_data.verse}</p>
-                          <p id="${page}" class="date">${page_data.date}</p>`;                     
-              var elementVerse = $("<div />").html(html);
-              book.turn('addPage', elementVerse, page);                       
-          }                                          
-     }
-}
-// make responsive
+// make responsive - UPDATED TO USE DEBOUNCING AND GLOBAL DATA
 window.addEventListener('resize', function (e) {
-  var chart = document.getElementById("calendar_basic");
-  if (chart.style.display == "block") {
-    make_charts();
-  }
-  // else {
-  //   var book = document.getElementById("book");
-  //   book.style.width = '';
-  //   book.style.height = '';
-  //   $(book).turn('size', book.clientWidth, book.clientHeight);
-  // }
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function() {
+      var chart = document.getElementById("calendar_basic");
+      
+      // Check if the chart is visible (or not explicitly hidden) AND data is loaded
+      if (chart && chart.style.display !== "none" && global_json_data) {
+          // Re-draw the chart, which recalculates all responsive dimensions (width, cellSize, height)
+          drawChart(global_json_data); 
+      }
+      
+      // Original logic for the 'book' element (assuming it's related to the Verge3D app or another component)
+      // else {
+      //   var book = document.getElementById("book");
+      //   book.style.width = '';
+      //   book.style.height = '';
+      //   $(book).turn('size', book.clientWidth, book.clientHeight);
+      // }
+  }, 250); // Debounce time: 250ms
 });
