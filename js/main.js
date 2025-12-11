@@ -1,7 +1,3 @@
-// =====================================================================
-// === CORE APP/CHART INITIALIZATION ===
-// =====================================================================
-
 const get_Json = fetch("json4datatable.json")
 .then(function(response) {
     return response.json();
