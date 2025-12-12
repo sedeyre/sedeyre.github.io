@@ -465,7 +465,8 @@ function drawChart(json_obj) {
       cellSize: cellSize_,     // making chart responsive      
       daysOfWeek: 'smtwtfs',
       underYearSpace: underYearSpace,
-      dayOfWeekRightSpace: 12,
+      dayOfWeekRightSpace: width/150,
+      dayOfWeekLeftSpace: width/120,
       underMonthSpace: 10,            
 
       monthOutlineColor: {
@@ -496,7 +497,7 @@ function drawChart(json_obj) {
         fontName: 'Courier New',
         // fontSize: 16,
         color: '#D1CDCA',
-        bold: false,
+        bold: true,
         italic: false,
       },
 
@@ -504,15 +505,15 @@ function drawChart(json_obj) {
         fontName: 'Courier New',
         // fontSize: 17,
         color: '#D1CDCA',
-        bold: false,
+        bold: true,
         italic: false
       },
 
       yearLabel: {
         fontName: 'Courier New',
-        // fontSize: 20,
+        fontSize: width/70,
         color: '#D1CDCA',
-        bold: false,
+        bold: true,
         italic: false
       }          
     }
