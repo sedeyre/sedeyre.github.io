@@ -164,7 +164,7 @@ img {
 /* * NEW MEDIA QUERY FOR SMALL LANDSCAPE DEVICES 
  * (e.g., phones/small tablets rotated sideways) 
  */
-@media (max-width: 800px) and (orientation: landscape) {
+@media (max-width: 915px) and (orientation: landscape) {
 
     .overlay_regular_content {
         width: 95%; 
