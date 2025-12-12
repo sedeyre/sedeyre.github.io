@@ -1,9 +1,11 @@
+/* --- GLOBAL STYLES (MODIFIED) --- */
 body {
   background-color: #080e1a;
-  margin: 0; /* Ensures the body has no default margin, minimizing gap */
-  padding: 0; /* Ensures the body has no default padding */
+  margin: 0; 
+  padding: 0; 
 }
 
+/* --- LOGO STYLING (MODIFIED FOR MINIMAL GAP) --- */
 .logo_1 {
   text-align: center;
   width: 100%;
@@ -21,17 +23,17 @@ body {
 .calendar_basic_1 {
   position: relative;
   visibility: visible;
-  /* margin: -10%; */
+  margin: -10%;
   animation: fadeIn ease 5s;
 }
 
 /* --- OVERLAY INNER CONTENT (MODIFIED FOR RIGHT IMAGE ALIGNMENT) --- */
 .container {
   width: 100%;
-  padding: 1vw; /* Consolidated padding */
+  padding: 1vw; 
   display: flex;
   align-items: flex-start;
-  justify-content: space-between; /* Space out the text and image */
+  justify-content: space-between; 
   height: 100%;
 }
 
@@ -43,16 +45,16 @@ img {
 .image {
   padding-left: 1vw;
   padding-right: 1vw;
-  flex-basis: 30%; /* Allow it to take up a defined portion of the width */
-  order: 2; /* Ensure it is visually on the right */
-  text-align: right; /* Push the image element inside its container to the right */
+  flex-basis: 35%; 
+  order: 2; 
+  text-align: right; 
 }
 
 .chart_verse {
-  flex-basis: 60%; /* Allow the text element to take up the rest of the space */
+  flex-basis: 60%; 
   color: #CD5C5C;
   font: 1.5vw "Fira Sans", serif;
-  order: 1; /* Ensure it is visually on the left */
+  order: 1; 
 }
 
 #event_ {
@@ -108,7 +110,6 @@ img {
   right: 2%;
   display: block;
   cursor: pointer;
-  animation: fadeIn ease 0.3s;
   z-index: 2000;
 }
 
@@ -160,15 +161,61 @@ img {
     }
 }
 
-/* Mobile Screens (e.g., phones in portrait) */
+/* * NEW MEDIA QUERY FOR SMALL LANDSCAPE DEVICES 
+ * (e.g., phones/small tablets rotated sideways) 
+ */
+@media (max-width: 800px) and (orientation: landscape) {
+
+    .overlay_regular_content {
+        width: 95%; 
+        height: 75%; /* Maximizes limited vertical space */
+        padding: 1vw;
+    }
+
+    .container {
+        flex-direction: row; /* Force side-by-side */
+        align-items: flex-start;
+    }
+
+    .chart_verse {
+        flex-basis: 60%; 
+        font-size: 1.8vw; /* Adjusted font size for landscape */
+        overflow: hidden;
+    }
+    
+    #event_ {
+        padding-top: 1vw; 
+        font-size: 1.2vw;
+    }
+
+    .image {
+        flex-basis: 35%; 
+        order: 2; 
+        text-align: right;
+        padding: 0.5vw;
+    }
+
+    img {
+        max-width: 100%; 
+        max-height: 80%; /* Prevents image from pushing outside the box vertically */
+    }
+    
+    #closeOverlay {
+        font-size: 3vh;
+        bottom: 1%;
+        right: 1%;
+    }
+}
+
+/* Mobile Screens (Portrait - less than 600px wide) */
 @media (max-width: 600px) {
     .overlay_regular_content {
         padding: 4vw 2vw;
-        width: 90%;
-        height: 70%;
+        width: 95%;
+        height: 95%;
     }
     
-    /* Stack content vertically */
+    /* Stack content vertically in portrait */
     .container {
         flex-direction: column;
         align-items: center;
@@ -177,12 +224,11 @@ img {
     }
     
     .image {
-        /* Reset for vertical stacking */
         padding: 0;
         order: 0;
         flex-basis: auto;
         margin-bottom: 2vh;
-        text-align: center; /* Center image on mobile */
+        text-align: center;
     }
     
     img {
@@ -190,7 +236,7 @@ img {
     }
     
     .chart_verse {
-        font-size: 3vw;
+        font-size: 4vw;
         flex-basis: auto;
         order: 1;
     }
