@@ -13,7 +13,6 @@ const get_Json = fetch("json4datatable.json")
 
 const make_charts = function() {
   get_Json.then(function(res) {
-    // Store data globally for use in the resize handler
     global_json_data = res;
 
     google.charts.load('current', {
@@ -31,32 +30,29 @@ make_charts();
 // === VERGE3D UTILITY FUNCTIONS (ONLY THE VERGE3D LAYER IS TOUCHED)
 // =====================================================================
 
-/**
- * Your GLBs are stored in `app/glb/`.
- * Your JSON currently provides paths like `app/the_name.glb`.
- * This function forces loading from `app/glb/<fileName>.glb` regardless of input path.
- */
 function normalizeGlbSceneURL(nameOrPath) {
   if (!nameOrPath || typeof nameOrPath !== 'string') return '';
 
-  // strip query/hash
   const raw = nameOrPath.trim().split('#')[0].split('?')[0].replaceAll('\\', '/');
 
-  // take basename (last path segment)
   const parts = raw.split('/');
   let base = parts[parts.length - 1] || '';
 
-  // if user passed just a name without extension, assume .glb
   if (base && !/\.(glb|gltf)$/i.test(base)) {
     base += '.glb';
   }
 
-  // Force to app/glb/
   if (base) {
     return `app/glb/${base}`;
   }
 
   return '';
+}
+
+function addCacheBuster(url, token) {
+  if (!url) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}v=${encodeURIComponent(String(token))}`;
 }
 
 function safeFullscreenExit() {
@@ -76,9 +72,6 @@ function safeFullscreenExit() {
   return null;
 }
 
-/**
- * Handles Fullscreen logic and returns a disposal function.
- */
 function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
   const container = document.getElementById(containerId);
   const fsButton = document.getElementById(fsButtonId);
@@ -113,13 +106,11 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
     fsButton.classList.add(elem ? 'fullscreen-close' : 'fullscreen-open');
     fsButton.classList.remove(elem ? 'fullscreen-open' : 'fullscreen-close');
 
-    // Update the visibility of the closeOverlay button
     const button = document.getElementById('closeOverlay');
     if (button) {
       button.style.display = elem ? 'none' : 'block';
     }
 
-    // Manually trigger resize event
     window.dispatchEvent(new Event('resize'));
   };
 
@@ -230,17 +221,15 @@ function createAppInstance(containerId, initOptions, preloader, PE) {
 }
 
 /**
- * Create a "camera.controlSettings" object compatible with Verge3D's internal
- * `App.enableControls()` (it expects `assignToControls()` to exist).
- *
- * This fixes:
- * `TypeError: e.controlSettings.assignToControls is not a function`
+ * Create Verge3D-compatible controlSettings object.
+ * (Verge3D's `App.enableControls()` expects `assignToControls()`.)
  */
 function createOrbitControlSettings() {
   return {
     type: 'ORBIT',
 
-    // defaults (Puzzles will overwrite via setCameraParam)
+    // ⭐ ensure rotation is enabled (otherwise autoRotate has no visible effect)
+    enableRotate: true,
     enablePan: false,
     enableZoom: true,
     enableCtrlZoom: true,
@@ -251,7 +240,6 @@ function createOrbitControlSettings() {
     orbitMinDistance: 1.5,
     orbitMaxDistance: 10,
 
-    // radians
     orbitMinPolarAngle: 0,
     orbitMaxPolarAngle: Math.PI,
     orbitMinAzimuthAngle: -Infinity,
@@ -260,15 +248,15 @@ function createOrbitControlSettings() {
     orbitEnableTurnover: false,
     screenSpacePanning: false,
 
-    // Verge3D calls this from enableControls()
     assignToControls: function(controls) {
       if (!controls) return;
 
-      // OrbitControls standard props
+      // ⭐ critical
+      if ('enableRotate' in controls) controls.enableRotate = !!this.enableRotate;
+
       if ('enablePan' in controls) controls.enablePan = !!this.enablePan;
       if ('enableZoom' in controls) controls.enableZoom = !!this.enableZoom;
 
-      // v3d OrbitControls supports these like three.js
       if ('minDistance' in controls) controls.minDistance = this.orbitMinDistance;
       if ('maxDistance' in controls) controls.maxDistance = this.orbitMaxDistance;
 
@@ -283,44 +271,30 @@ function createOrbitControlSettings() {
       if ('rotateSpeed' in controls) controls.rotateSpeed = this.rotateSpeed;
       if ('enableKeys' in controls) controls.enableKeys = !!this.enableKeys;
 
-      // optional: some builds support ctrl zoom separately
       if ('enableCtrlZoom' in controls) controls.enableCtrlZoom = !!this.enableCtrlZoom;
     }
   };
 }
 
-/**
- * Ensure a camera named "Camera" exists in the scene graph, because your Puzzles
- * refer to "Camera" explicitly.
- *
- * IMPORTANT: we do NOT create an arbitrary camera with a plain object for controlSettings.
- * We either reuse the app's default camera, or create a camera and attach a compatible
- * controlSettings object with `assignToControls()`.
- */
 function ensureNamedCamera(app) {
   if (!app || !app.scene) return null;
 
-  // If there is already a camera named "Camera" in scene, use it.
   let cam = app.scene.getObjectByName('Camera');
   if (cam && cam.isCamera) {
-    // Patch missing controlSettings if needed
     if (!cam.controlSettings || typeof cam.controlSettings.assignToControls !== 'function') {
       cam.controlSettings = createOrbitControlSettings();
     }
     return cam;
   }
 
-  // Try to find any camera already in the scene
   let anySceneCam = null;
   app.scene.traverse(obj => {
     if (!anySceneCam && obj && obj.isCamera) anySceneCam = obj;
   });
 
-  // Or take the app's default camera (often not in the scene graph)
   const defaultCam = (typeof app.getCamera === 'function') ? app.getCamera(true) : null;
   cam = anySceneCam || defaultCam;
 
-  // Last resort: create one
   if (!cam) {
     cam = new v3d.PerspectiveCamera(45, 1, 0.1, 1000);
     cam.position.set(0, 0, 6);
@@ -329,70 +303,84 @@ function ensureNamedCamera(app) {
 
   cam.name = 'Camera';
 
-  // Ensure it's reachable by PzLib.getObjectByName (scene traversal)
   if (!cam.parent) {
     app.scene.add(cam);
   }
 
-  // Ensure controls settings are compatible with enableControls()
   if (!cam.controlSettings || typeof cam.controlSettings.assignToControls !== 'function') {
     cam.controlSettings = createOrbitControlSettings();
   }
 
-  // Now safe to set as active camera (Puzzles will call setActiveCamera('Camera'))
   if (typeof app.setCamera === 'function') {
-    try {
-      app.setCamera(cam);
-    } catch (e) {
-      console.error(e);
-    }
+    try { app.setCamera(cam); } catch (e) { console.error(e); }
   }
 
   return cam;
 }
 
 /**
- * Force OrbitControls if for some reason a different controls type was created.
- * This is needed for your Puzzles "autorotate camera" which checks OrbitControls.
+ * Do NOT create OrbitControls manually.
+ * Let Verge3D create/manage controls via `app.enableControls()`.
  */
 function ensureOrbitControls(app) {
-  if (!app) return;
+  if (!app) return false;
 
-  const camera = (typeof app.getCamera === 'function') ? app.getCamera(true) : null;
-  const dom = app.renderer && app.renderer.domElement ? app.renderer.domElement : null;
-  if (!camera || !dom) return;
-
-  if (app.controls && (app.controls instanceof v3d.OrbitControls)) return;
-
-  if (app.controls && typeof app.controls.dispose === 'function') {
-    try { app.controls.dispose(); } catch (e) { /* ignore */ }
+  if (app.controls && (app.controls instanceof v3d.OrbitControls)) {
+    // also force enableRotate true if somehow false
+    if ('enableRotate' in app.controls) app.controls.enableRotate = true;
+    return true;
   }
 
-  app.controls = new v3d.OrbitControls(camera, dom);
-  app.controls.enableDamping = true;
-  app.controls.dampingFactor = 0.08;
-  app.controls.enablePan = false;
-  app.controls.enableZoom = true;
+  const cam = (typeof app.getCamera === 'function') ? app.getCamera(true) : null;
+  if (!cam) return false;
+
+  if (!cam.controlSettings || typeof cam.controlSettings.assignToControls !== 'function'
+      || cam.controlSettings.type !== 'ORBIT') {
+    cam.controlSettings = createOrbitControlSettings();
+  } else {
+    // ensure rotate enabled
+    cam.controlSettings.enableRotate = true;
+  }
+
+  try {
+    app.enableControls();
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+
+  if (app.controls && (app.controls instanceof v3d.OrbitControls)) {
+    if ('enableRotate' in app.controls) app.controls.enableRotate = true;
+    return true;
+  }
+
+  console.warn('ensureOrbitControls: controls are still not OrbitControls after enableControls().');
+  return false;
 }
 
 /**
- * Robustly disposes a Verge3D app instance (renderer/context, controls, puzzles listeners).
+ * Dispose without calling PL.dispose() (prevents `_pGlob = null` crash later).
  */
 function disposeVerge3DInstance(instance) {
   if (!instance || !instance.app) return;
 
-  // Dispose puzzles first to remove DOM/canvas listeners
-  if (instance.PL && typeof instance.PL.dispose === 'function') {
-    try { instance.PL.dispose(); } catch (e) { /* ignore */ }
+  if (instance.PL) {
+    if (typeof instance.PL.disposeListeners === 'function') {
+      try { instance.PL.disposeListeners(); } catch (e) { /* ignore */ }
+    }
+    if (typeof instance.PL.disposeHTMLElements === 'function') {
+      try { instance.PL.disposeHTMLElements(); } catch (e) { /* ignore */ }
+    }
+    if (typeof instance.PL.disposeMaterialsCache === 'function') {
+      try { instance.PL.disposeMaterialsCache(); } catch (e) { /* ignore */ }
+    }
   }
 
-  // Dispose controls
   if (instance.app.controls && typeof instance.app.controls.dispose === 'function') {
     console.log('Disposing Verge3D controls...');
     try { instance.app.controls.dispose(); } catch (e) { /* ignore */ }
   }
 
-  // Dispose renderer and force context loss (helps repeated launches)
   if (instance.app.renderer) {
     try { instance.app.renderer.dispose(); } catch (e) { /* ignore */ }
     if (typeof instance.app.renderer.forceContextLoss === 'function') {
@@ -400,10 +388,8 @@ function disposeVerge3DInstance(instance) {
     }
   }
 
-  // Dispose app
   try { instance.app.dispose(); } catch (e) { /* ignore */ }
 
-  // Remove fullscreen listeners
   if (instance.disposeFullscreen) {
     try { instance.disposeFullscreen(); } catch (e) { /* ignore */ }
   }
@@ -435,13 +421,15 @@ async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = 
   let PL = null;
   let PE = null;
 
-  if (v3d.AppUtils.isXML(logicURL)) {
+  const logicURLBusted = logicURL ? addCacheBuster(logicURL, launchToken) : logicURL;
+
+  if (v3d.AppUtils.isXML(logicURLBusted)) {
     const PUZZLES_DIR = '/puzzles/';
-    const logicURLJS = logicURL.match(/(.*)\.xml$/)[1] + '.js';
+    const logicURLJS = logicURLBusted.match(/(.*)\.xml(\?.*)?$/)[1] + '.js';
     PL = await new v3d.PuzzlesLoader().loadEditorWithLogic(PUZZLES_DIR, logicURLJS);
     PE = v3d.PE;
-  } else if (v3d.AppUtils.isJS(logicURL)) {
-    PL = await new v3d.PuzzlesLoader().loadLogic(logicURL);
+  } else if (v3d.AppUtils.isJS(logicURLBusted)) {
+    PL = await new v3d.PuzzlesLoader().loadLogic(logicURLBusted);
   }
 
   let initOptions = { useFullscreen: true };
@@ -457,7 +445,6 @@ async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = 
 
   if (initOptions.preloaderStartCb) initOptions.preloaderStartCb();
 
-  // Load scene as a Promise to avoid race conditions on re-open
   const loaded = await new Promise((resolve, reject) => {
     app.loadScene(
       finalSceneURL,
@@ -470,7 +457,6 @@ async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = 
     return false;
   });
 
-  // If another overlay launch happened while this one was loading, dispose immediately
   if (launchToken !== v3dLaunchToken) {
     try { disposeVerge3DInstance({ app, PL, PE, disposeFullscreen }); } catch (e) { /* ignore */ }
     return null;
@@ -481,26 +467,21 @@ async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = 
     return null;
   }
 
-  // Ensure Puzzles can find a camera named "Camera" and enableControls() won't crash
   ensureNamedCamera(app);
 
-  // Enable engine controls (now safe because camera has compatible controlSettings)
   try { app.enableControls(); } catch (e) { console.error(e); }
 
-  // Ensure OrbitControls for auto-rotate puzzle
   ensureOrbitControls(app);
 
-  // Run app
   try { app.run(); } catch (e) { console.error(e); }
 
   if (PE) PE.updateAppInstance(app);
 
-  // Init Puzzles AFTER renderer/camera/controls exist
   if (PL) {
-    try { PL.init(app, initOptions); } catch (e) { console.error(e); }
+    try { PL.init(app, initOptions); console.log('controls:', app.controls?.constructor?.name, 'enableRotate:', app.controls?.enableRotate, 'autoRotate:', app.controls?.autoRotate);} catch (e) { console.error(e); }
   }
 
-  // Puzzles can still re-enable controls; enforce OrbitControls again
+  // Puzzles may set camera/enableControls again -> re-assert that rotation is enabled
   ensureOrbitControls(app);
 
   removeSpecificElement();
@@ -514,12 +495,10 @@ async function openOverlay(ship_path) {
   v3dLaunchToken += 1;
   const launchToken = v3dLaunchToken;
 
-  // Dispose previous app instance before starting a new one
   if (activeAppInstance) {
     closeOverlayAndDisposeApp({ keepOverlayOpen: true });
   }
 
-  // ACTIVATE THE SHROUD
   const shroud = document.getElementById('calendar-shroud');
   if (shroud) shroud.style.display = 'block';
 
@@ -534,7 +513,6 @@ async function openOverlay(ship_path) {
     });
   }
 
-  // Force loading from app/glb/
   const sceneURL = normalizeGlbSceneURL(ship_path);
 
   const params = v3d.AppUtils.getPageParams();
@@ -563,7 +541,6 @@ async function openOverlay(ship_path) {
       };
       setupCloseOverlayListener();
     } else {
-      // Failed -> remove shroud so page doesn't stay semi-opaque
       const shroudNow = document.getElementById('calendar-shroud');
       if (shroudNow) shroudNow.style.display = 'none';
     }
@@ -614,9 +591,6 @@ function setupCloseOverlayListener() {
 
 function drawChart(json_obj) {
 
-  // --- 1. Dynamic Height Calculation Logic ---
-
-  // 1a. Count the unique years in the dataset
   const years = new Set();
   json_obj.forEach(item => {
       if (item.date) {
@@ -628,9 +602,8 @@ function drawChart(json_obj) {
       console.warn('No data found to draw calendar chart.');
       return;
   }
-  // ---------------------------------------------
 
-  var width = document.documentElement.clientWidth; // making chart responsive
+  var width = document.documentElement.clientWidth;
 
   var dataTable = new google.visualization.DataTable();
 
@@ -639,29 +612,27 @@ function drawChart(json_obj) {
   dataTable.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
   dataTable.addColumn({ type: 'string', role: 'annotation' });
 
-
-  // populate chart datatable
   for (let x in json_obj) {
     let d = new Date(json_obj[x].date);
-              let date_options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',  hour: 'numeric', minute: 'numeric'};
-              let date_ = d.toLocaleDateString('en-us', date_options);
-              let number__ = parseInt(d.getDate());
-              let number_mod = number__.addSuffix();
-              let date_mod = date_.replace(number__, number_mod);
+    let date_options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',  hour: 'numeric', minute: 'numeric'};
+    let date_ = d.toLocaleDateString('en-us', date_options);
+    let number__ = parseInt(d.getDate());
+    let number_mod = number__.addSuffix();
+    let date_mod = date_.replace(number__, number_mod);
 
-              let tooltipHTML = `<div style="padding: 8px 12px; white-space: nowrap;">
-                  <strong>${date_mod}</strong>
-              </div>`;
+    let tooltipHTML = `<div style="padding: 8px 12px; white-space: nowrap;">
+        <strong>${date_mod}</strong>
+    </div>`;
 
     dataTable.addRows([
-    [new Date(Date.parse(json_obj[x].date)), 1, tooltipHTML,
-      createCustomHTMLContent(json_obj[x].img, date_mod, json_obj[x].name, json_obj[x].verse)]
+      [new Date(Date.parse(json_obj[x].date)), 1, tooltipHTML,
+        createCustomHTMLContent(json_obj[x].img, date_mod, json_obj[x].name, json_obj[x].verse)]
     ]);
   }
 
   var chart = new google.visualization.Calendar(document.getElementById('calendar_basic'));
 
-  let cellSize_ = width/56; // making chart responsive
+  let cellSize_ = width/56;
 
   const CALENDAR_HEIGHT_MULTIPLIER = 8.7;
   const underYearSpace = 12;
@@ -799,7 +770,6 @@ function fadeOut(element) {
 }
 
 function createCustomHTMLContent(imgURL, event_time, event, verse) {
-
   return '<div class="container">' +
     '<div class="image">' + '<img src="' + imgURL + '">' +
     '</div>' +
@@ -869,3 +839,4 @@ window.addEventListener('resize', function (e) {
       }
   }, 250);
 });
+

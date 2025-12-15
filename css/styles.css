@@ -1,4 +1,7 @@
 /* --- GLOBAL STYLES (MODIFIED) --- */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
+
 body {
   background-color: #080e1a;
   margin: 0; 
@@ -10,10 +13,10 @@ body {
   text-align: center;
   width: 100%;
   margin-top: -3.5%;
-  margin-bottom: -7%;
+  margin-bottom: -7.5%;
   font-family: 'Orbitron', sans-serif;
   font-weight: 100;
-  font-size: 11.3vw;
+  font-size: 9.7vw;
   font-kerning: auto;
   letter-spacing: -0.01vw;
   color: rgb(217, 216, 219);
