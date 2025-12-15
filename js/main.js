@@ -481,6 +481,26 @@ async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = 
     try { PL.init(app, initOptions); console.log('controls:', app.controls?.constructor?.name, 'enableRotate:', app.controls?.enableRotate, 'autoRotate:', app.controls?.autoRotate);} catch (e) { console.error(e); }
   }
 
+// DEBUG: check state AFTER puzzles' 10s timeout should have executed
+window.setTimeout(() => {
+  console.log(
+    'after 11s controls:',
+    app.controls?.constructor?.name,
+    'enableRotate:',
+    app.controls?.enableRotate,
+    'autoRotate:',
+    app.controls?.autoRotate,
+    'autoRotateSpeed:',
+    app.controls?.autoRotateSpeed
+  );
+
+  // DEBUG: force it on (if this still doesn't rotate, controls.update() isn't running)
+  if (app.controls) {
+    app.controls.autoRotate = true;
+    app.controls.autoRotateSpeed = 2;
+  }
+}, 11000);
+
   // Puzzles may set camera/enableControls again -> re-assert that rotation is enabled
   ensureOrbitControls(app);
 
