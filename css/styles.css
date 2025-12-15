@@ -1,8 +1,16 @@
 /* --- GLOBAL STYLES (MODIFIED) --- */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+
+
+::-webkit-scrollbar {
+  display: none;
+} 
+
 
 
 body {
+  font-family: 'Courier New', Courier, monospace;
   background-color: #080e1a;
   margin: 0; 
   padding: 0; 
@@ -12,8 +20,8 @@ body {
 .logo_1 {
   text-align: center;
   width: 100%;
-  margin-top: -3.5%;
-  margin-bottom: -7.5%;
+  margin-top: -2.2%;
+  margin-bottom: -6.7%;
   font-family: 'Orbitron', sans-serif;
   font-weight: 100;
   font-size: 9.7vw;
@@ -53,16 +61,16 @@ img {
   text-align: right; 
 }
 
-.chart_verse {
+#chart_verse {
   flex-basis: 60%; 
   color: #CD5C5C;
-  font: 1.5vw "Fira Sans", serif;
+  font-family: 1.3vw "Raleway", sans-serif;
   order: 1; 
 }
 
 #event_ {
   padding-top: 4vw;
-  font: 1.vw "Fira Sans", serif;
+  font: 1vw "Raleway", sans-serif;
   color: #04AA6D;
 }
 
@@ -135,7 +143,7 @@ img {
   padding: 1.5vw;
   
   width: 90%;
-  height: 45%;
+  height: 40%;
   max-width: 900px;
   max-height: 800px;
   min-width: 300px;
@@ -149,18 +157,30 @@ img {
   border-width: 0.1vw;
 }
 
+.text {
+  font-family:'Courier New', Courier, monospace, sans-serif;
+  font-size: 1.3vw;
+}
+
 /* --- MEDIA QUERIES --- */
 
 /* Tablet and Smaller Desktop Screens */
 @media (max-width: 1024px) {
-    .chart_verse {
-        font-size: 2vw;
+
+    .overlay_regular_content {
+        padding-top: 3vw;
+        width: 70%;
+        height: 40%;
+    }
+
+    .text {
+        font-size: 1.1vw;
     }
     #event_ {
-        font-size: 1.5vw;
+        font-size: 1.vw;
     }
     img {
-      max-width: 20vw;
+      max-width: 17vw;
     }
 }
 
@@ -170,8 +190,8 @@ img {
 @media (max-width: 915px) and (orientation: landscape) {
 
     .overlay_regular_content {
-        width: 95%; 
-        height: 75%; /* Maximizes limited vertical space */
+        width: 75%; 
+        height: 50%; /* Maximizes limited vertical space */
         padding: 1vw;
     }
 
@@ -180,26 +200,27 @@ img {
         align-items: flex-start;
     }
 
-    .chart_verse {
+    .text {
+        padding-top: 1.7vw;
         flex-basis: 60%; 
-        font-size: 1.8vw; /* Adjusted font size for landscape */
+        font-size: 1.3vw; /* Adjusted font size for landscape */
         overflow: hidden;
     }
     
     #event_ {
         padding-top: 1vw; 
-        font-size: 1.2vw;
+        font-size: 1.1vw;
     }
 
     .image {
         flex-basis: 35%; 
         order: 2; 
         text-align: right;
-        padding: 0.5vw;
+        padding: 1.2vw;
     }
 
     img {
-        max-width: 100%; 
+        max-width: 70%; 
         max-height: 80%; /* Prevents image from pushing outside the box vertically */
     }
     
@@ -214,8 +235,8 @@ img {
 @media (max-width: 600px) {
     .overlay_regular_content {
         padding: 4vw 2vw;
-        width: 95%;
-        height: 95%;
+        width: 75%;
+        height: 55%;
     }
     
     /* Stack content vertically in portrait */
@@ -235,18 +256,17 @@ img {
     }
     
     img {
-        max-width: 70vw;
+        max-width: 50vw;
     }
     
-    .chart_verse {
-        font-size: 4vw;
-        flex-basis: auto;
-        order: 1;
+    .text {
+      font-family:'Courier New', Courier, monospace, sans-serif;
+      font-size: 2.3vw;
     }
     
     #event_ {
         padding-top: 2vw;
-        font-size: 3vw;
+        font-size: 2.5vw;
     }
 
     #closeOverlay {
