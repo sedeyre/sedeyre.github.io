@@ -1,0 +1,109 @@
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <tab name="Init" type="InitTab" active="false" scrollx="361.5999755859375" scrolly="0" scale="0.9"></tab>
+  <tab name="New Tab" type="CommonTab" active="true" scrollx="360.4206277437886" scrolly="69.14314212289742" scale="0.6874896797538295">
+    <block xmlns="https://developers.google.com/blockly/xml" type="setActiveCamera" id="*qPPgD;KtR;EH)J:jB0{" x="-538" y="191">
+      <value name="CAMERA">
+        <shadow type="objectList" id="_tTdTDmY-9U_;BgT{A%y">
+          <field name="FIELDNAME">Camera</field>
+        </shadow>
+      </value>
+      <next>
+        <block type="setCameraParam" id="[2hF]FeMZD[2L%E+_!tB">
+          <mutation xmlns="http://www.w3.org/1999/xhtml" type="ORBIT_MIN_DISTANCE_PERSP"></mutation>
+          <field name="TYPE">ORBIT_MIN_DISTANCE_PERSP</field>
+          <value name="ORBIT_MIN_DISTANCE_PERSP">
+            <shadow type="math_number" id="FWy`2JI6/U1$`%C`#Qmg">
+              <field name="NUM">1.5</field>
+            </shadow>
+          </value>
+          <value name="OBJECT">
+            <shadow type="objectList" id="[Q0p+fii[4b9Cl{#5p-{">
+              <field name="FIELDNAME">Camera</field>
+            </shadow>
+          </value>
+          <next>
+            <block type="setCameraParam" id="EVo0[|?)3Bo+c$@k))uA">
+              <mutation xmlns="http://www.w3.org/1999/xhtml" type="ORBIT_MAX_DISTANCE_PERSP"></mutation>
+              <field name="TYPE">ORBIT_MAX_DISTANCE_PERSP</field>
+              <value name="ORBIT_MAX_DISTANCE_PERSP">
+                <shadow type="math_number" id="5P|T)%)*Ev_HA2$]dSd-">
+                  <field name="NUM">10</field>
+                </shadow>
+              </value>
+              <value name="OBJECT">
+                <shadow type="objectList" id=")^SDC7xImEZg-fEb0mRd">
+                  <field name="FIELDNAME">Camera</field>
+                </shadow>
+              </value>
+              <next>
+                <block type="setTimeout" id="FEqiktdHJ{Q*ReGA6{Sd">
+                  <value name="VALUE">
+                    <shadow type="math_number" id="UNMun$wXN.#SyP*Hu/IQ">
+                      <field name="NUM">10</field>
+                    </shadow>
+                  </value>
+                  <statement name="DO">
+                    <block type="autoRotateCamera" id="B[`yF48x6;#tyK2~0#PJ">
+                      <field name="ON_OFF">ON</field>
+                      <value name="SPEED">
+                        <shadow type="math_number" id="h:[TYbf@u0f$]}Jc8jX}">
+                          <field name="NUM">2</field>
+                        </shadow>
+                      </value>
+                      <next>
+                        <block type="whenClicked" id="ms6Q`z$wvIy,4mE:RxfA" inline="true">
+                          <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="true" enableifmissed="false" useid="true"></mutation>
+                          <field name="X_RAY">FALSE</field>
+                          <field name="DOUBLE_CLICK">FALSE</field>
+                          <field name="LEFT_BUTTON">TRUE</field>
+                          <field name="MIDDLE_BUTTON">TRUE</field>
+                          <field name="RIGHT_BUTTON">TRUE</field>
+                          <value name="VALUE">
+                            <shadow type="objectList" id=":IfD/#fk#tbX~,X@0^O!">
+                              <field name="FIELDNAME">Scene</field>
+                            </shadow>
+                            <block type="allObjectList" id="![;#(N.w*Uv`.ZqaKcRQ"></block>
+                          </value>
+                          <statement name="DO">
+                            <block type="autoRotateCamera" id="J:03|pkJza8ua)K1y*4g">
+                              <field name="ON_OFF">OFF</field>
+                              <value name="SPEED">
+                                <shadow type="math_number" id="p9Gz3MgvI!a]Y?LmWOl%">
+                                  <field name="NUM">0</field>
+                                </shadow>
+                              </value>
+                              <next>
+                                <block type="setTimeout" id="#B(d45%.,v[@Hp@(qq:K">
+                                  <value name="VALUE">
+                                    <shadow type="math_number" id="2K/7`HpJ]FCJcTM)eEZ(">
+                                      <field name="NUM">10</field>
+                                    </shadow>
+                                  </value>
+                                  <statement name="DO">
+                                    <block type="autoRotateCamera" id="XB?l4$]9d)h%?,RVA_:H">
+                                      <field name="ON_OFF">ON</field>
+                                      <value name="SPEED">
+                                        <shadow type="math_number" id="R)8iKyI+_KC_=?3Bo/`I">
+                                          <field name="NUM">2</field>
+                                        </shadow>
+                                      </value>
+                                    </block>
+                                  </statement>
+                                </block>
+                              </next>
+                            </block>
+                          </statement>
+                        </block>
+                      </next>
+                    </block>
+                  </statement>
+                </block>
+              </next>
+            </block>
+          </next>
+        </block>
+      </next>
+    </block>
+  </tab>
+  <editorsettings viewport-x="985.2000671386718" viewport-y="113.00000381469727" viewport-w="565.6" viewport-h="343" viewport-hidden="false" toolbox-library-mode="false" toolbox-minimized-mode="false"></editorsettings>
+</xml>

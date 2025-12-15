@@ -4,7 +4,7 @@
 // === GLOBAL VARIABLES & INITIAL DATA FETCH ===
 // =====================================================================
 let global_json_data = null;
-let resizeTimer; 
+let resizeTimer;
 
 const get_Json = fetch("json4datatable.json")
 .then(function(response) {
@@ -14,26 +14,70 @@ const get_Json = fetch("json4datatable.json")
 const make_charts = function() {
   get_Json.then(function(res) {
     // Store data globally for use in the resize handler
-    global_json_data = res; 
-    
+    global_json_data = res;
+
     google.charts.load('current', {
       callback: function () {
-      drawChart(res);              
+      drawChart(res);
     },
-    packages: ["calendar"]  
-    });      
+    packages: ["calendar"]
+    });
   });
 };
 
 make_charts();
 
 // =====================================================================
-// === VERGE3D UTILITY FUNCTIONS (Defined FIRST to prevent ReferenceErrors) ===
+// === VERGE3D UTILITY FUNCTIONS (ONLY THE VERGE3D LAYER IS TOUCHED)
 // =====================================================================
 
 /**
+ * Your GLBs are stored in `app/glb/`.
+ * Your JSON currently provides paths like `app/the_name.glb`.
+ * This function forces loading from `app/glb/<fileName>.glb` regardless of input path.
+ */
+function normalizeGlbSceneURL(nameOrPath) {
+  if (!nameOrPath || typeof nameOrPath !== 'string') return '';
+
+  // strip query/hash
+  const raw = nameOrPath.trim().split('#')[0].split('?')[0].replaceAll('\\', '/');
+
+  // take basename (last path segment)
+  const parts = raw.split('/');
+  let base = parts[parts.length - 1] || '';
+
+  // if user passed just a name without extension, assume .glb
+  if (base && !/\.(glb|gltf)$/i.test(base)) {
+    base += '.glb';
+  }
+
+  // Force to app/glb/
+  if (base) {
+    return `app/glb/${base}`;
+  }
+
+  return '';
+}
+
+function safeFullscreenExit() {
+  const exit = document.exitFullscreen
+    || document.webkitExitFullscreen
+    || document.mozCancelFullScreen
+    || document.msExitFullscreen;
+
+  const fsElem = document.fullscreenElement
+    || document.webkitFullscreenElement
+    || document.mozFullScreenElement
+    || document.msFullscreenElement;
+
+  if (fsElem && exit) {
+    try { return exit.call(document); } catch (e) { /* ignore */ }
+  }
+  return null;
+}
+
+/**
  * Handles Fullscreen logic and returns a disposal function.
- * This MUST be defined before createApp to prevent ReferenceError.
  */
 function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
   const container = document.getElementById(containerId);
@@ -43,7 +87,7 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
     return null;
   }
   if (!useFullscreen) {
-    if (fsButton) fsButton.style.display = 'none';
+    fsButton.style.display = 'none';
     return null;
   }
 
@@ -63,6 +107,7 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
         || document.mozCancelFullScreen
         || document.webkitExitFullscreen
         || document.msExitFullscreen).call(document);
+
   const changeFs = () => {
     const elem = fsElement();
     fsButton.classList.add(elem ? 'fullscreen-close' : 'fullscreen-open');
@@ -71,32 +116,35 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
     // Update the visibility of the closeOverlay button
     const button = document.getElementById('closeOverlay');
     if (button) {
-        button.style.display = elem ? 'none' : 'block';
-  }    
+      button.style.display = elem ? 'none' : 'block';
+    }
+
     // Manually trigger resize event
-    window.dispatchEvent(new Event('resize'));    
+    window.dispatchEvent(new Event('resize'));
   };
 
   function fsButtonClick(event) {
-    let button = document.getElementById('closeOverlay');
+    const button = document.getElementById('closeOverlay');
     event.stopPropagation();
+
+    if (!container) return;
+
     if (fsElement()) {
-      button.style.display = 'block';
-        exitFs();
+      if (button) button.style.display = 'block';
+      exitFs();
     } else {
-      button.style.display = 'none';
-        requestFs(container);
+      if (button) button.style.display = 'none';
+      requestFs(container);
     }
-    // Manually trigger resize event
+
     window.dispatchEvent(new Event('resize'));
   }
 
   if (fsEnabled()) {
     fsButton.style.display = 'inline';
-  }
-  else {
-    let button = document.getElementById('closeOverlay');
-    button.style.display = 'block';
+  } else {
+    const button = document.getElementById('closeOverlay');
+    if (button) button.style.display = 'block';
   }
 
   fsButton.addEventListener('click', fsButtonClick);
@@ -111,28 +159,69 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
     document.removeEventListener('mozfullscreenchange', changeFs);
     document.removeEventListener('msfullscreenchange', changeFs);
     document.removeEventListener('fullscreenchange', changeFs);
-  }
+  };
 
   return disposeFullscreen;
 }
 
-/**
- * Creates the Verge3D application instance.
- */
+function prepareExternalInterface(app) {
+  // Keep empty unless you use ExternalInterface from Puzzles
+}
+
+function createCustomPreloader(updateCb, finishCb) {
+  class CustomPreloader extends v3d.Preloader {
+    constructor() {
+      super();
+    }
+    onUpdate(percentage) {
+      super.onUpdate(percentage);
+      if (updateCb) updateCb(percentage);
+    }
+    onFinish() {
+      super.onFinish();
+      if (finishCb) finishCb();
+    }
+  }
+  return new CustomPreloader();
+}
+
+function puzzlesEditorPreparePreloader(preloader, PE) {
+  const _onUpdate = preloader.onUpdate.bind(preloader);
+  preloader.onUpdate = function(percentage) {
+    _onUpdate(percentage);
+    PE.loadingUpdateCb(percentage);
+  };
+
+  const _onFinish = preloader.onFinish.bind(preloader);
+  preloader.onFinish = function() {
+    _onFinish();
+    PE.loadingFinishCb();
+  };
+}
+
+function createPreloader(containerId, initOptions, PE) {
+  const preloader = initOptions.useCustomPreloader
+    ? createCustomPreloader(initOptions.preloaderProgressCb, initOptions.preloaderEndCb)
+    : new v3d.SimplePreloader({ container: containerId });
+
+  if (PE) puzzlesEditorPreparePreloader(preloader, PE);
+  return preloader;
+}
+
 function createAppInstance(containerId, initOptions, preloader, PE) {
   const ctxSettings = {};
   if (initOptions.useBkgTransp) ctxSettings.alpha = true;
   if (initOptions.preserveDrawBuf) ctxSettings.preserveDrawingBuffer = true;
 
   const app = new v3d.App(containerId, ctxSettings, preloader);
+
   if (initOptions.useBkgTransp) {
-      app.clearBkgOnLoad = true;
-      if (app.renderer) {
-          app.renderer.setClearColor(0x000000, 0);
-      }
+    app.clearBkgOnLoad = true;
+    if (app.renderer) {
+      app.renderer.setClearColor(0x000000, 0);
+    }
   }
 
-  // namespace for communicating with code generated by Puzzles
   app.ExternalInterface = {};
   prepareExternalInterface(app);
   if (PE) PE.viewportUseAppInstance(app);
@@ -141,244 +230,390 @@ function createAppInstance(containerId, initOptions, preloader, PE) {
 }
 
 /**
- * Sets up the ExternalInterface namespace on the app instance 
- * for communication with Verge3D Puzzles.
+ * Create a "camera.controlSettings" object compatible with Verge3D's internal
+ * `App.enableControls()` (it expects `assignToControls()` to exist).
+ *
+ * This fixes:
+ * `TypeError: e.controlSettings.assignToControls is not a function`
  */
-function prepareExternalInterface(app) {
-  // Placeholder, keep it empty if not used by Puzzles
-}
+function createOrbitControlSettings() {
+  return {
+    type: 'ORBIT',
 
-/**
- * Handles the creation of the preloader instance.
- */
-function createPreloader(containerId, initOptions, PE) {
-    const preloader = initOptions.useCustomPreloader
-            ? createCustomPreloader(initOptions.preloaderProgressCb,
-            initOptions.preloaderEndCb)
-            : new v3d.SimplePreloader({ container: containerId });              
+    // defaults (Puzzles will overwrite via setCameraParam)
+    enablePan: false,
+    enableZoom: true,
+    enableCtrlZoom: true,
+    enableKeys: false,
 
-    if (PE) puzzlesEditorPreparePreloader(preloader, PE);
+    rotateSpeed: 1.0,
 
-    return preloader;
-}
+    orbitMinDistance: 1.5,
+    orbitMaxDistance: 10,
 
-/**
- * Creates a custom preloader class.
- */
-function createCustomPreloader(updateCb, finishCb) {
-    class CustomPreloader extends v3d.Preloader {
-        constructor() {
-            super();
-        }
+    // radians
+    orbitMinPolarAngle: 0,
+    orbitMaxPolarAngle: Math.PI,
+    orbitMinAzimuthAngle: -Infinity,
+    orbitMaxAzimuthAngle: Infinity,
 
-        onUpdate(percentage) {
-            super.onUpdate(percentage);
-            if (updateCb) updateCb(percentage);
-        }
+    orbitEnableTurnover: false,
+    screenSpacePanning: false,
 
-        onFinish() {
-            super.onFinish();
-            if (finishCb) finishCb();
-        }
+    // Verge3D calls this from enableControls()
+    assignToControls: function(controls) {
+      if (!controls) return;
+
+      // OrbitControls standard props
+      if ('enablePan' in controls) controls.enablePan = !!this.enablePan;
+      if ('enableZoom' in controls) controls.enableZoom = !!this.enableZoom;
+
+      // v3d OrbitControls supports these like three.js
+      if ('minDistance' in controls) controls.minDistance = this.orbitMinDistance;
+      if ('maxDistance' in controls) controls.maxDistance = this.orbitMaxDistance;
+
+      if ('minPolarAngle' in controls) controls.minPolarAngle = this.orbitMinPolarAngle;
+      if ('maxPolarAngle' in controls) controls.maxPolarAngle = this.orbitMaxPolarAngle;
+
+      if ('minAzimuthAngle' in controls) controls.minAzimuthAngle = this.orbitMinAzimuthAngle;
+      if ('maxAzimuthAngle' in controls) controls.maxAzimuthAngle = this.orbitMaxAzimuthAngle;
+
+      if ('screenSpacePanning' in controls) controls.screenSpacePanning = !!this.screenSpacePanning;
+
+      if ('rotateSpeed' in controls) controls.rotateSpeed = this.rotateSpeed;
+      if ('enableKeys' in controls) controls.enableKeys = !!this.enableKeys;
+
+      // optional: some builds support ctrl zoom separately
+      if ('enableCtrlZoom' in controls) controls.enableCtrlZoom = !!this.enableCtrlZoom;
     }
-
-    return new CustomPreloader();
+  };
 }
 
 /**
- * Modify the app's preloader to track the loading process in the Puzzles Editor.
+ * Ensure a camera named "Camera" exists in the scene graph, because your Puzzles
+ * refer to "Camera" explicitly.
+ *
+ * IMPORTANT: we do NOT create an arbitrary camera with a plain object for controlSettings.
+ * We either reuse the app's default camera, or create a camera and attach a compatible
+ * controlSettings object with `assignToControls()`.
  */
-function puzzlesEditorPreparePreloader(preloader, PE) {
-  const _onUpdate = preloader.onUpdate.bind(preloader);
-  preloader.onUpdate = function(percentage) {
-      _onUpdate(percentage);
-      PE.loadingUpdateCb(percentage);
+function ensureNamedCamera(app) {
+  if (!app || !app.scene) return null;
+
+  // If there is already a camera named "Camera" in scene, use it.
+  let cam = app.scene.getObjectByName('Camera');
+  if (cam && cam.isCamera) {
+    // Patch missing controlSettings if needed
+    if (!cam.controlSettings || typeof cam.controlSettings.assignToControls !== 'function') {
+      cam.controlSettings = createOrbitControlSettings();
+    }
+    return cam;
   }
 
-  const _onFinish = preloader.onFinish.bind(preloader);
-  preloader.onFinish = function() {
-      _onFinish();
-      PE.loadingFinishCb();
+  // Try to find any camera already in the scene
+  let anySceneCam = null;
+  app.scene.traverse(obj => {
+    if (!anySceneCam && obj && obj.isCamera) anySceneCam = obj;
+  });
+
+  // Or take the app's default camera (often not in the scene graph)
+  const defaultCam = (typeof app.getCamera === 'function') ? app.getCamera(true) : null;
+  cam = anySceneCam || defaultCam;
+
+  // Last resort: create one
+  if (!cam) {
+    cam = new v3d.PerspectiveCamera(45, 1, 0.1, 1000);
+    cam.position.set(0, 0, 6);
+    cam.lookAt(0, 0, 0);
   }
+
+  cam.name = 'Camera';
+
+  // Ensure it's reachable by PzLib.getObjectByName (scene traversal)
+  if (!cam.parent) {
+    app.scene.add(cam);
+  }
+
+  // Ensure controls settings are compatible with enableControls()
+  if (!cam.controlSettings || typeof cam.controlSettings.assignToControls !== 'function') {
+    cam.controlSettings = createOrbitControlSettings();
+  }
+
+  // Now safe to set as active camera (Puzzles will call setActiveCamera('Camera'))
+  if (typeof app.setCamera === 'function') {
+    try {
+      app.setCamera(cam);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  return cam;
+}
+
+/**
+ * Force OrbitControls if for some reason a different controls type was created.
+ * This is needed for your Puzzles "autorotate camera" which checks OrbitControls.
+ */
+function ensureOrbitControls(app) {
+  if (!app) return;
+
+  const camera = (typeof app.getCamera === 'function') ? app.getCamera(true) : null;
+  const dom = app.renderer && app.renderer.domElement ? app.renderer.domElement : null;
+  if (!camera || !dom) return;
+
+  if (app.controls && (app.controls instanceof v3d.OrbitControls)) return;
+
+  if (app.controls && typeof app.controls.dispose === 'function') {
+    try { app.controls.dispose(); } catch (e) { /* ignore */ }
+  }
+
+  app.controls = new v3d.OrbitControls(camera, dom);
+  app.controls.enableDamping = true;
+  app.controls.dampingFactor = 0.08;
+  app.controls.enablePan = false;
+  app.controls.enableZoom = true;
+}
+
+/**
+ * Robustly disposes a Verge3D app instance (renderer/context, controls, puzzles listeners).
+ */
+function disposeVerge3DInstance(instance) {
+  if (!instance || !instance.app) return;
+
+  // Dispose puzzles first to remove DOM/canvas listeners
+  if (instance.PL && typeof instance.PL.dispose === 'function') {
+    try { instance.PL.dispose(); } catch (e) { /* ignore */ }
+  }
+
+  // Dispose controls
+  if (instance.app.controls && typeof instance.app.controls.dispose === 'function') {
+    console.log('Disposing Verge3D controls...');
+    try { instance.app.controls.dispose(); } catch (e) { /* ignore */ }
+  }
+
+  // Dispose renderer and force context loss (helps repeated launches)
+  if (instance.app.renderer) {
+    try { instance.app.renderer.dispose(); } catch (e) { /* ignore */ }
+    if (typeof instance.app.renderer.forceContextLoss === 'function') {
+      try { instance.app.renderer.forceContextLoss(); } catch (e) { /* ignore */ }
+    }
+  }
+
+  // Dispose app
+  try { instance.app.dispose(); } catch (e) { /* ignore */ }
+
+  // Remove fullscreen listeners
+  if (instance.disposeFullscreen) {
+    try { instance.disposeFullscreen(); } catch (e) { /* ignore */ }
+  }
+
+  console.log('Verge3D application disposed successfully.');
 }
 
 // =====================================================================
-// === VERGE3D LIFECYCLE MANAGEMENT ===
+// === VERGE3D LIFECYCLE MANAGEMENT
 // =====================================================================
 
-/**
- * Tracks the currently active Verge3D application instance. 
- */
 let activeAppInstance = null;
+let v3dLaunchToken = 0;
 
-async function createApp({containerId, fsButtonId = null, sceneURL, logicURL = ''}) {
-    if (!sceneURL) {
-        console.log('No scene URL specified');
-        return;
-    }
+async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = '', launchToken }) {
+  if (!sceneURL) {
+    console.log('No scene URL specified');
+    return null;
+  }
 
-    v3d.Cache.enabled = false;
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.error(`Verge3D container not found: ${containerId}`);
+    return null;
+  }
 
-    let PL = null, PE = null;
+  v3d.Cache.enabled = false;
 
-    if (v3d.AppUtils.isXML(logicURL)) {
-        const PUZZLES_DIR = '/puzzles/';
-        const logicURLJS = logicURL.match(/(.*)\.xml$/)[1] + '.js';
-        PL = await new v3d.PuzzlesLoader().loadEditorWithLogic(PUZZLES_DIR, logicURLJS);
-        PE = v3d.PE;
-    } else if (v3d.AppUtils.isJS(logicURL)) {
-        PL = await new v3d.PuzzlesLoader().loadLogic(logicURL);
-    }
+  let PL = null;
+  let PE = null;
 
-    let initOptions = { useFullscreen: true };
-    if (PL) {
-        initOptions = PL.execInitPuzzles({ container: containerId }).initOptions;
-    }
-    sceneURL = initOptions.useCompAssets ? `${sceneURL}.xz` : sceneURL;
+  if (v3d.AppUtils.isXML(logicURL)) {
+    const PUZZLES_DIR = '/puzzles/';
+    const logicURLJS = logicURL.match(/(.*)\.xml$/)[1] + '.js';
+    PL = await new v3d.PuzzlesLoader().loadEditorWithLogic(PUZZLES_DIR, logicURLJS);
+    PE = v3d.PE;
+  } else if (v3d.AppUtils.isJS(logicURL)) {
+    PL = await new v3d.PuzzlesLoader().loadLogic(logicURL);
+  }
 
-    // prepareFullscreen is now defined above and accessible
-    const disposeFullscreen = prepareFullscreen(containerId, fsButtonId,
-            initOptions.useFullscreen);
-    
-    const preloader = createPreloader(containerId, initOptions, PE);
+  let initOptions = { useFullscreen: true };
+  if (PL) {
+    initOptions = PL.execInitPuzzles({ container: containerId }).initOptions;
+  }
 
-    const app = createAppInstance(containerId, initOptions, preloader, PE);
-    
-    if (initOptions.preloaderStartCb) initOptions.preloaderStartCb();
-    
-    app.loadScene(sceneURL, () => {
-        app.enableControls();          
-        app.run();
-        
-        if (PE) PE.updateAppInstance(app);
-        // PL.init runs visual_logic.js which requires controls to be enabled
-        if (PL) PL.init(app, initOptions); 
+  const finalSceneURL = initOptions.useCompAssets ? `${sceneURL}.xz` : sceneURL;
 
-        removeSpecificElement();
+  const disposeFullscreen = prepareFullscreen(containerId, fsButtonId, initOptions.useFullscreen);
+  const preloader = createPreloader(containerId, initOptions, PE);
+  const app = createAppInstance(containerId, initOptions, preloader, PE);
 
-    }, null, () => {
-        console.log(`Can't load the scene ${sceneURL}`);
-    });
+  if (initOptions.preloaderStartCb) initOptions.preloaderStartCb();
 
-    return { app, PL, PE, disposeFullscreen };
+  // Load scene as a Promise to avoid race conditions on re-open
+  const loaded = await new Promise((resolve, reject) => {
+    app.loadScene(
+      finalSceneURL,
+      () => resolve(true),
+      null,
+      () => reject(new Error(`Can't load the scene ${finalSceneURL}`))
+    );
+  }).catch(err => {
+    console.error(err);
+    return false;
+  });
+
+  // If another overlay launch happened while this one was loading, dispose immediately
+  if (launchToken !== v3dLaunchToken) {
+    try { disposeVerge3DInstance({ app, PL, PE, disposeFullscreen }); } catch (e) { /* ignore */ }
+    return null;
+  }
+
+  if (!loaded) {
+    try { disposeVerge3DInstance({ app, PL, PE, disposeFullscreen }); } catch (e) { /* ignore */ }
+    return null;
+  }
+
+  // Ensure Puzzles can find a camera named "Camera" and enableControls() won't crash
+  ensureNamedCamera(app);
+
+  // Enable engine controls (now safe because camera has compatible controlSettings)
+  try { app.enableControls(); } catch (e) { console.error(e); }
+
+  // Ensure OrbitControls for auto-rotate puzzle
+  ensureOrbitControls(app);
+
+  // Run app
+  try { app.run(); } catch (e) { console.error(e); }
+
+  if (PE) PE.updateAppInstance(app);
+
+  // Init Puzzles AFTER renderer/camera/controls exist
+  if (PL) {
+    try { PL.init(app, initOptions); } catch (e) { console.error(e); }
+  }
+
+  // Puzzles can still re-enable controls; enforce OrbitControls again
+  ensureOrbitControls(app);
+
+  removeSpecificElement();
+
+  requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+
+  return { app, PL, PE, disposeFullscreen };
 }
 
-function openOverlay(ship_path) {
-    // 1. Dispose of the previous app if it exists
-    if (activeAppInstance) {
-        console.log('Disposing previous Verge3D application instance...');
-        closeOverlayAndDisposeApp();
-        activeAppInstance = null; // Re-assignment after disposal function runs
-    }
+async function openOverlay(ship_path) {
+  v3dLaunchToken += 1;
+  const launchToken = v3dLaunchToken;
 
-    // ACTIVATE THE SHROUD 
-    const shroud = document.getElementById('calendar-shroud');
-    if (shroud) {
-        shroud.style.display = 'block';
-    }
+  // Dispose previous app instance before starting a new one
+  if (activeAppInstance) {
+    closeOverlayAndDisposeApp({ keepOverlayOpen: true });
+  }
 
-    const params = v3d.AppUtils.getPageParams();
+  // ACTIVATE THE SHROUD
+  const shroud = document.getElementById('calendar-shroud');
+  if (shroud) shroud.style.display = 'block';
 
-    // 2. The createApp function will now handle setting and returning the instance
-    createApp({
-        containerId: 'v3d-container',
-        fsButtonId: 'fullscreen-button',
-        sceneURL: params.load || ship_path,
-        logicURL: params.logic || 'app/visual_logic.js',
-    }).then(result => {
-        if (result && result.app) {
-            // Store the new active instance and its associated variables
-            activeAppInstance = {
-                app: result.app,
-                PL: result.PL,
-                PE: result.PE,
-                disposeFullscreen: result.disposeFullscreen
-            };
-            
-            setupCloseOverlayListener();
-        }
-    });
+  const overlay_ship = document.getElementById('overlay_ship');
 
-    const overlay_ship = document.getElementById('overlay_ship');
-    // Display the overlay
+  if (overlay_ship) {
     overlay_ship.style.display = 'block';
     requestAnimationFrame(() => {
-        overlay_ship.style.opacity = '1';
-        hideCalendarHoverLabel(); // hide calendar hover label
-    }); 
-}
+      overlay_ship.style.opacity = '1';
+      hideCalendarHoverLabel();
+      window.dispatchEvent(new Event('resize'));
+    });
+  }
 
-/**
- * Disposes the active Verge3D application and hides the overlay.
- * This is the crucial step to free up WebGL context and memory.
- */
-function closeOverlayAndDisposeApp() {
-    if (activeAppInstance && activeAppInstance.app) {
-        
-        // ⭐ FIX: Explicitly dispose of the camera controls first.
-        // This removes event listeners from the 'domElement', preventing the 'null' error.
-        if (activeAppInstance.app.controls && typeof activeAppInstance.app.controls.dispose === 'function') {
-            console.log('Disposing Verge3D controls...');
-            activeAppInstance.app.controls.dispose();
-        }
-        
-        activeAppInstance.app.dispose(); // Primary memory/context release call
-        
-        // Remove the fullscreen event listeners
-        if (activeAppInstance.disposeFullscreen) {
-            activeAppInstance.disposeFullscreen();
-        }
-        
-        console.log('Verge3D application disposed successfully.');
-    }
-    
-    // Reset the persistent reference
-    activeAppInstance = null;
-    
-    // Hide the overlay
-    const overlay_ship = document.getElementById('overlay_ship');
-    if (overlay_ship) {
-        overlay_ship.style.opacity = '0';
-        // Use a timeout to ensure the canvas is removed after transition (optional but clean)
-        setTimeout(() => {
-            overlay_ship.style.display = 'none';
-        }, 300); 
-    }
-    
-    // Clean up the container's content (CRITICAL to clear old canvas element)
-    const container = document.getElementById('v3d-container');
-    if (container) {
-        container.innerHTML = '';
+  // Force loading from app/glb/
+  const sceneURL = normalizeGlbSceneURL(ship_path);
 
-        // ⭐ DEACTIVATE THE SHROUD
-        const shroud = document.getElementById('calendar-shroud');
-        if (shroud) {
-            shroud.style.display = 'none';
-        }
-    }
-}
+  const params = v3d.AppUtils.getPageParams();
+  const logicURL = params.logic || 'app/visual_logic.js';
 
-/**
- * Sets up the event listener for the close button.
- */
-function setupCloseOverlayListener() {
-   const button_closeoverlay = document.getElementById('closeOverlay');
-    
-    if (button_closeoverlay) {
-        // Ensure the listener is only attached once
-        button_closeoverlay.onclick = closeOverlayAndDisposeApp;
-        
+  try {
+    const result = await createApp({
+      containerId: 'v3d-container',
+      fsButtonId: 'fullscreen-button',
+      sceneURL: sceneURL,
+      logicURL: logicURL,
+      launchToken: launchToken,
+    });
+
+    if (launchToken !== v3dLaunchToken) {
+      if (result && result.app) disposeVerge3DInstance(result);
+      return;
+    }
+
+    if (result && result.app) {
+      activeAppInstance = {
+        app: result.app,
+        PL: result.PL,
+        PE: result.PE,
+        disposeFullscreen: result.disposeFullscreen
+      };
+      setupCloseOverlayListener();
     } else {
-        console.error("Error: Could not find element with ID 'closeOverlay'. The close button listener was not set.");
+      // Failed -> remove shroud so page doesn't stay semi-opaque
+      const shroudNow = document.getElementById('calendar-shroud');
+      if (shroudNow) shroudNow.style.display = 'none';
     }
+  } catch (err) {
+    console.error(err);
+    const shroudNow = document.getElementById('calendar-shroud');
+    if (shroudNow) shroudNow.style.display = 'none';
+  }
+}
+
+function closeOverlayAndDisposeApp({ keepOverlayOpen = false } = {}) {
+  safeFullscreenExit();
+
+  if (activeAppInstance && activeAppInstance.app) {
+    disposeVerge3DInstance(activeAppInstance);
+  }
+
+  activeAppInstance = null;
+
+  const container = document.getElementById('v3d-container');
+  if (container) container.innerHTML = '';
+
+  const overlay_ship = document.getElementById('overlay_ship');
+  if (overlay_ship && !keepOverlayOpen) {
+    overlay_ship.style.opacity = '0';
+    setTimeout(() => {
+      overlay_ship.style.display = 'none';
+    }, 300);
+  }
+
+  const shroud = document.getElementById('calendar-shroud');
+  if (shroud) shroud.style.display = 'none';
+}
+
+function setupCloseOverlayListener() {
+  const button_closeoverlay = document.getElementById('closeOverlay');
+
+  if (button_closeoverlay) {
+    button_closeoverlay.onclick = () => closeOverlayAndDisposeApp();
+  } else {
+    console.error("Error: Could not find element with ID 'closeOverlay'.");
+  }
 }
 
 // =====================================================================
-// === CALENDAR/BOOK FUNCTIONS 
+// === CALENDAR/BOOK FUNCTIONS (UNCHANGED)
 // =====================================================================
 
 function drawChart(json_obj) {
-  
+
   // --- 1. Dynamic Height Calculation Logic ---
 
   // 1a. Count the unique years in the dataset
@@ -391,12 +626,11 @@ function drawChart(json_obj) {
   const numberOfYears = years.size;
   if (numberOfYears === 0) {
       console.warn('No data found to draw calendar chart.');
-      return; 
+      return;
   }
   // ---------------------------------------------
 
-  var width = document.documentElement.clientWidth; // making chart responsive  
-  // var height = document.documentElement.clientHeight; // Removed, using calculated height
+  var width = document.documentElement.clientWidth; // making chart responsive
 
   var dataTable = new google.visualization.DataTable();
 
@@ -404,8 +638,8 @@ function drawChart(json_obj) {
   dataTable.addColumn({ type: 'number', id: 'Capture' });
   dataTable.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
   dataTable.addColumn({ type: 'string', role: 'annotation' });
-  
-  
+
+
   // populate chart datatable
   for (let x in json_obj) {
     let d = new Date(json_obj[x].date);
@@ -414,67 +648,62 @@ function drawChart(json_obj) {
               let number__ = parseInt(d.getDate());
               let number_mod = number__.addSuffix();
               let date_mod = date_.replace(number__, number_mod);
-              
-    // Custom Tooltip HTML: Only shows the Date
+
               let tooltipHTML = `<div style="padding: 8px 12px; white-space: nowrap;">
                   <strong>${date_mod}</strong>
               </div>`;
 
     dataTable.addRows([
-    [new Date(Date.parse(json_obj[x].date)), 1,tooltipHTML, createCustomHTMLContent(json_obj[x].img, date_mod, json_obj[x].name, json_obj[x].verse)]
+    [new Date(Date.parse(json_obj[x].date)), 1, tooltipHTML,
+      createCustomHTMLContent(json_obj[x].img, date_mod, json_obj[x].name, json_obj[x].verse)]
     ]);
-    }
+  }
 
   var chart = new google.visualization.Calendar(document.getElementById('calendar_basic'));
 
   let cellSize_ = width/56; // making chart responsive
-  
-  // 1b. Calculate the estimated required height
-  const CALENDAR_HEIGHT_MULTIPLIER = 8.7; // Empirical multiplier for 1 year's height based on cellSize_
-  const underYearSpace = 12; // From your options: calendar.underYearSpace
-  
-  // Height for one year block: (Multiplier * CellSize) + UnderYearSpace
-  const heightPerYearBlock = (CALENDAR_HEIGHT_MULTIPLIER * cellSize_) + underYearSpace;
-  
-  // Total Estimated Height: (Number of Years * Height per Year Block) + small padding reserve
-  var estimatedHeight = (numberOfYears * heightPerYearBlock) + 20;
 
+  const CALENDAR_HEIGHT_MULTIPLIER = 8.7;
+  const underYearSpace = 12;
+
+  const heightPerYearBlock = (CALENDAR_HEIGHT_MULTIPLIER * cellSize_) + underYearSpace;
+  var estimatedHeight = (numberOfYears * heightPerYearBlock) + 20;
 
   var options = {
 
     legend: 'none',
     title: '',
-    focusTarget: 'none',       
-    height: estimatedHeight, // <-- CRITICAL CHANGE: Use the calculated height
-    width: width,          
+    focusTarget: 'none',
+    height: estimatedHeight,
+    width: width,
 
     colorAxis: {
       colors:['#A3A2A1','#A3A2A1'],
-      values: [1,0]          
+      values: [1,0]
     },
 
     tooltip: { isHtml: true },
-    
+
     noDataPattern: {
       backgroundColor: '#161B26',
       color:  '#161B26'
     },
 
     calendar: {
-      backgroundColor:'black',          
-      cellSize: cellSize_,     // making chart responsive      
+      backgroundColor:'black',
+      cellSize: cellSize_,
       daysOfWeek: 'smtwtfs',
       underYearSpace: underYearSpace,
       dayOfWeekRightSpace: width/150,
       dayOfWeekLeftSpace: width/120,
-      underMonthSpace: 10,            
+      underMonthSpace: 10,
 
       monthOutlineColor: {
         stroke: '#080e1a',
         strokeOpacity: 1,
         strokeWidth: 1
       },
-      
+
       unusedMonthOutlineColor: {
         stroke: '#080e1a',
         strokeOpacity: 1,
@@ -488,14 +717,13 @@ function drawChart(json_obj) {
       },
 
       cellColor: {
-        stroke: '#080e1a',      // Color the border of the squares.
-        strokeOpacity: 0, // Make the borders half transparent.
-        strokeWidth: cellSize_/3.5     // making chart responsive
+        stroke: '#080e1a',
+        strokeOpacity: 0,
+        strokeWidth: cellSize_/3.5
       },
 
       dayOfWeekLabel: {
         fontName: 'Courier New',
-        // fontSize: 16,
         color: '#D1CDCA',
         bold: true,
         italic: false,
@@ -503,7 +731,6 @@ function drawChart(json_obj) {
 
       monthLabel: {
         fontName: 'Courier New',
-        // fontSize: 17,
         color: '#D1CDCA',
         bold: true,
         italic: false
@@ -515,11 +742,10 @@ function drawChart(json_obj) {
         color: '#D1CDCA',
         bold: true,
         italic: false
-      }          
+      }
     }
   };
 
-  // hide chart heatmap legend in the upright  corner
   google.visualization.events.addListener(chart, 'ready', function () {
     $($('#calendar_basic text')[0]).hide();
     $($('#calendar_basic text')[1]).hide();
@@ -531,8 +757,7 @@ function drawChart(json_obj) {
 
   chart.draw(dataTable, options);
 
-  // Add click event listener
- google.visualization.events.addListener(chart, 'select', () => {
+  google.visualization.events.addListener(chart, 'select', () => {
     let sel = chart.getSelection();
     if (!sel.length) return;
 
@@ -542,7 +767,7 @@ function drawChart(json_obj) {
     if (json_obj[row] && json_obj[row].ship) {
       openOverlay(json_obj[row].ship);
       return;
-    } 
+    }
 
     let html = dataTable.getValue(row, 3);
     if (html) {
@@ -552,11 +777,9 @@ function drawChart(json_obj) {
 
 }
 
-// adding the ordinal suffix, turning 1, 2 and 3 into 1st, 2nd and 3rd
 Number.prototype.addSuffix = function() {
   var n = this.toString().split('.')[0];
   var lastDigits = n.substring(n.length - 2);
-  //add exception just for 11, 12 and 13
   if(lastDigits==='11' || lastDigits==='12' || lastDigits==='13'){
       return this+'<sup>th</sup>';
   }
@@ -569,29 +792,28 @@ Number.prototype.addSuffix = function() {
 };
 
 function fadeOut(element) {
-  element.style.opacity = '0'; // Start fade out
+  element.style.opacity = '0';
   setTimeout(() => {
-      element.style.display = 'none'; // Hide after transition
-  }, 500); // Matches transition duration (0.5s)
+      element.style.display = 'none';
+  }, 500);
 }
 
 function createCustomHTMLContent(imgURL, event_time, event, verse) {
-  
-  return '<div class="container">' + 
+
+  return '<div class="container">' +
     '<div class="image">' + '<img src="' + imgURL + '">' +
-    '</div>' +    
+    '</div>' +
       '<div class="text">'+'<p>'+verse+'</p>'+'<p id="event_">'+'Sky object '+event+'<br/>'+event_time+'</p>'+
-      '</div>' +        
-  '</div>';              
+      '</div>' +
+  '</div>';
 }
 
-// Function to remove the specific element
 function removeSpecificElement() {
   if (document.querySelector('a[href="https://www.soft8soft.com/verge3d-trial/"]')) {
     var element = document.querySelector('a[href="https://www.soft8soft.com/verge3d-trial/"]');
     element.parentNode.removeChild(element);
     element.classList.remove('hidden-by-script');
-  return;
+    return;
   }
 }
 
@@ -604,26 +826,21 @@ function openOverlay_regular(html) {
     return;
   }
 
-  // Insert your custom HTML
   content.innerHTML = html;
 
-  // Show overlay
   overlay.style.display = 'block';
   requestAnimationFrame(() => {
     overlay.style.opacity = '1';
-    hideCalendarHoverLabel(); // hide calendar hover label
+    hideCalendarHoverLabel();
   });
 
-  // Remove previous listener to avoid duplicates
   content.onmouseleave = null;
 
-  // Close overlay when mouse leaves the content box
   content.addEventListener('mouseleave', () => {
-    // fade out overlay
     overlay.style.opacity = '0';
     setTimeout(() => {
       overlay.style.display = 'none';
-      showCalendarHoverLabel(); // restore calendar hover label
+      showCalendarHoverLabel();
     }, 200);
   }, { once: true });
 }
@@ -642,24 +859,13 @@ function showCalendarHoverLabel() {
   });
 }
 
-// make responsive - UPDATED TO USE DEBOUNCING AND GLOBAL DATA
 window.addEventListener('resize', function (e) {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(function() {
       var chart = document.getElementById("calendar_basic");
-      
-      // Check if the chart is visible (or not explicitly hidden) AND data is loaded
+
       if (chart && chart.style.display !== "none" && global_json_data) {
-          // Re-draw the chart, which recalculates all responsive dimensions (width, cellSize, height)
-          drawChart(global_json_data); 
+          drawChart(global_json_data);
       }
-      
-      // Original logic for the 'book' element (assuming it's related to the Verge3D app or another component)
-      // else {
-      //   var book = document.getElementById("book");
-      //   book.style.width = '';
-      //   book.style.height = '';
-      //   $(book).turn('size', book.clientWidth, book.clientHeight);
-      // }
-  }, 250); // Debounce time: 250ms
+  }, 250);
 });
