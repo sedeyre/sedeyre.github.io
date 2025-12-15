@@ -70,7 +70,7 @@ img {
 
 #event_ {
   padding-top: 4vw;
-  font: 1vw "Raleway", sans-serif;
+  font: 0.8vw "Raleway", sans-serif;
   color: #04AA6D;
 }
 
@@ -159,7 +159,7 @@ img {
 
 .text {
   font-family:'Courier New', Courier, monospace, sans-serif;
-  font-size: 1.3vw;
+  font-size: 1.1vw;
 }
 
 /* --- MEDIA QUERIES --- */
