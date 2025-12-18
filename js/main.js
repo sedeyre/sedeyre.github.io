@@ -615,6 +615,9 @@ async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = 
 }
 
 async function openOverlay(ship_path) {
+
+  const instruct_element = document.getElementById('shroud_instruct');
+
   v3dLaunchToken += 1;
   const launchToken = v3dLaunchToken;
 
@@ -629,9 +632,11 @@ async function openOverlay(ship_path) {
 
   if (overlay_ship) {
     overlay_ship.style.display = 'block';
+
     requestAnimationFrame(() => {
       overlay_ship.style.opacity = '1';
       hideCalendarHoverLabel();
+      instruct_fadeIn_fadeOut(instruct_element);
       window.dispatchEvent(new Event('resize'));
     });
   }
@@ -672,6 +677,18 @@ async function openOverlay(ship_path) {
     const shroudNow = document.getElementById('calendar-shroud');
     if (shroudNow) shroudNow.style.display = 'none';
   }
+}
+
+function instruct_fadeIn_fadeOut (element) {
+   setTimeout(() => {
+        // Fade in
+        element.style.opacity = 1;
+
+        setTimeout(() => {
+            // Fade out after 7 seconds
+            element.style.opacity = 0;
+        }, 7000); // 7 seconds
+    }, 2000); // 2 seconds
 }
 
 function closeOverlayAndDisposeApp({ keepOverlayOpen = false } = {}) {
