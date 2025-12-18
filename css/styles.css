@@ -49,7 +49,7 @@ body {
 }
 
 img {
-  border-radius: 0.5vw;
+  border-radius: 0.4vw;
   max-width: 15vw
 }
 
@@ -127,7 +127,7 @@ img {
 .overlay_regular {
   position: fixed;
   inset: 0;
-  background: rgba(8, 14, 26, 0.7);
+  background: rgba(8, 15, 27, 0.7);
   display: none;
   opacity: 0;
   transition: opacity .9s ease;
@@ -139,7 +139,7 @@ img {
   left: 50%;
   transform: translate(-50%, -50%);
 
-  background: rgb(15, 3, 18);
+  background: #0f0312;
   padding: 1.5vw;
   
   width: 90%;
@@ -282,13 +282,13 @@ img {
 #overlay_ship {
   position: fixed; top: 20vh; left: 25%; right: 25%; width: 50%; height: 50%;
   background: rgba(8, 14, 26, 0.7);
-  display: flex;
+  display: block;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
 
-.v3d-container {
+#v3d-container {
   visibility: inherit;
   position: absolute;
   width: 100%;

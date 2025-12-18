@@ -31,8 +31,7 @@ make_charts();
 // =====================================================================
 
 /**
- * Your GLBs are stored in `app/glb/`.
- * Your JSON currently provides paths like `app/the_name.glb`.
+ * JSON currently provides paths like `app/the_name.glb`.
  * This function forces loading from `app/glb/<fileName>.glb` regardless of input path.
  */
 function normalizeGlbSceneURL(nameOrPath) {
@@ -91,61 +90,67 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
     return null;
   }
 
+  // IMPORTANT: fullscreen the overlay wrapper so the button remains visible
+  const overlay = document.getElementById('overlay_ship');
+  const fsTarget = overlay || container;
+
   const fsEnabled = () => document.fullscreenEnabled
-        || document.webkitFullscreenEnabled
-        || document.mozFullScreenEnabled
-        || document.msFullscreenEnabled;
+    || document.webkitFullscreenEnabled
+    || document.mozFullScreenEnabled
+    || document.msFullscreenEnabled;
 
   const fsElement = () => document.fullscreenElement
-        || document.webkitFullscreenElement
-        || document.mozFullScreenElement
-        || document.msFullscreenElement;
+    || document.webkitFullscreenElement
+    || document.mozFullScreenElement
+    || document.msFullscreenElement;
 
   const requestFs = elem => (elem.requestFullscreen
-        || elem.mozRequestFullScreen
-        || elem.webkitRequestFullscreen
-        || elem.msRequestFullscreen).call(elem);
+    || elem.mozRequestFullScreen
+    || elem.webkitRequestFullscreen
+    || elem.msRequestFullscreen).call(elem);
 
   const exitFs = () => (document.exitFullscreen
-        || document.mozCancelFullScreen
-        || document.webkitExitFullscreen
-        || document.msExitFullscreen).call(document);
+    || document.mozCancelFullScreen
+    || document.webkitExitFullscreen
+    || document.msExitFullscreen).call(document);
 
   const changeFs = () => {
     const elem = fsElement();
-    fsButton.classList.add(elem ? 'fullscreen-close' : 'fullscreen-open');
-    fsButton.classList.remove(elem ? 'fullscreen-open' : 'fullscreen-close');
 
-    const button = document.getElementById('closeOverlay');
-    if (button) {
-      button.style.display = elem ? 'none' : 'block';
-    }
+    fsButton.classList.toggle('fullscreen-open', !elem);
+    fsButton.classList.toggle('fullscreen-close', !!elem);
+
+    // Keep your existing behavior: hide X while fullscreen
+    const closeX = document.getElementById('closeOverlay');
+    if (closeX) closeX.style.display = elem ? 'none' : 'block';
 
     window.dispatchEvent(new Event('resize'));
   };
 
   function fsButtonClick(event) {
-    const button = document.getElementById('closeOverlay');
     event.stopPropagation();
 
-    if (!container) return;
-
+    // In fullscreen: clicking the fullscreen button should close the overlay
+    // the same way as the X does (and it will also exit fullscreen).
     if (fsElement()) {
-      if (button) button.style.display = 'block';
-      exitFs();
-    } else {
-      if (button) button.style.display = 'none';
-      requestFs(container);
+      closeOverlayAndDisposeApp();
+      return;
     }
 
-    window.dispatchEvent(new Event('resize'));
+    // Not fullscreen: enter fullscreen
+    if (fsTarget) {
+      const closeX = document.getElementById('closeOverlay');
+      if (closeX) closeX.style.display = 'none';
+      requestFs(fsTarget);
+    }
   }
 
   if (fsEnabled()) {
     fsButton.style.display = 'inline';
   } else {
-    const button = document.getElementById('closeOverlay');
-    if (button) button.style.display = 'block';
+    // no fullscreen support → just show the normal close
+    const closeX = document.getElementById('closeOverlay');
+    if (closeX) closeX.style.display = 'block';
   }
 
   fsButton.addEventListener('click', fsButtonClick);
@@ -153,6 +158,8 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
   document.addEventListener('mozfullscreenchange', changeFs);
   document.addEventListener('msfullscreenchange', changeFs);
   document.addEventListener('fullscreenchange', changeFs);
+
+  changeFs();
 
   return () => {
     fsButton.removeEventListener('click', fsButtonClick);
