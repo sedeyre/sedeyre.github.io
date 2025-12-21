@@ -120,7 +120,7 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
     fsButton.classList.toggle('fullscreen-open', !elem);
     fsButton.classList.toggle('fullscreen-close', !!elem);
 
-    // Keep your existing behavior: hide X while fullscreen
+    // Keep existing behavior: hide X while fullscreen
     const closeX = document.getElementById('closeOverlay');
     if (closeX) closeX.style.display = elem ? 'none' : 'block';
 
