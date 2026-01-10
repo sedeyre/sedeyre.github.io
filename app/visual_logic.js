@@ -51,6 +51,10 @@ _pGlob.htmlElements = new Set();
 _pGlob.materialsCache = new Map();
 _pGlob.css3Objects = new WeakMap();
 
+_pGlob.activeTimerIds = new Set();      // Track all setTimeout IDs
+_pGlob.activeIntervalIds = new Set();   // Track all setInterval IDs
+_pGlob.activeFrameIds = new Set();      // Track all requestAnimationFrame IDs
+
 _pGlob.AXIS_X = new v3d.Vector3(1, 0, 0);
 _pGlob.AXIS_Y = new v3d.Vector3(0, 1, 0);
 _pGlob.AXIS_Z = new v3d.Vector3(0, 0, 1);
@@ -324,75 +328,81 @@ const createPzLib = ({ v3d=null, appInstance=null }) => {
         }
     }
         
-    function initObjectPicking(callback, eventType, mouseDownUseTouchStart=false,
-            allowedMouseButtons=null) {
-    
-        // css renderer prevents interacting with canvas, in that case we assign events on container
-        const elem = appInstance.cssRenderer ? appInstance.container : appInstance.renderer.domElement;
-        bindListener(elem, eventType, pickListener);
-    
-        if (eventType === 'mousedown') {
-    
-            const touchEventName = mouseDownUseTouchStart ? 'touchstart' : 'touchend';
-            bindListener(elem, touchEventName, pickListener);
-    
-        } else if (eventType === 'dblclick') {
-    
-            let prevTapTime = 0;
-    
-            function doubleTapCallback(event) {
-                const now = new Date().getTime();
-                const timesince = now - prevTapTime;
-    
-                if (timesince < 600 && timesince > 0) {
-                    pickListener(event);
-                    prevTapTime = 0;
-                    return;
-                }
-    
-                prevTapTime = new Date().getTime();
+// initObjectPicking - SIMPLIFIED (no token tracking needed)
+function initObjectPicking(callback, eventType, mouseDownUseTouchStart=false, allowedMouseButtons=null, retryCount = 0) {
+    const MAX_RETRIES = 10;
+    const RETRY_DELAY = 300;
+
+    if (!appInstance || !appInstance.renderer || !appInstance.renderer.domElement) {
+        if (retryCount < MAX_RETRIES) {
+            const timerId = setTimeout(() => initObjectPicking(callback, eventType, mouseDownUseTouchStart, allowedMouseButtons, retryCount + 1), RETRY_DELAY);
+            if (_pGlob && _pGlob.activeTimerIds) {
+                _pGlob.activeTimerIds.add(timerId);
             }
-    
-            const touchEventName = mouseDownUseTouchStart ? 'touchstart' : 'touchend';
-            bindListener(elem, touchEventName, doubleTapCallback);
+            return;
         }
+        console.error('initObjectPicking: renderer not available after retries');
+        return;
+    }
+
+    const elem = appInstance.cssRenderer ? appInstance.container : appInstance.renderer.domElement;
     
-        const raycaster = new v3d.Raycaster();
-    
-        function pickListener(event) {
-    
-            // to handle unload in loadScene puzzle
-            if (!appInstance.getCamera()) {
+    bindListener(elem, eventType, pickListener);
+
+    if (eventType === 'mousedown') {
+        const touchEventName = mouseDownUseTouchStart ? 'touchstart' : 'touchend';
+        bindListener(elem, touchEventName, pickListener);
+    } else if (eventType === 'dblclick') {
+        let prevTapTime = 0;
+
+        function doubleTapCallback(event) {
+            const now = new Date().getTime();
+            const timesince = now - prevTapTime;
+            if (timesince < 600 && timesince > 0) {
+                pickListener(event);
+                prevTapTime = 0;
                 return;
             }
-    
-            event.preventDefault();
-    
-            let xNorm = 0;
-            let yNorm = 0;
-            if (event instanceof MouseEvent) {
-                if (allowedMouseButtons !== null && allowedMouseButtons.indexOf(event.button) === -1) {
-                    return;
-                }
-                xNorm = event.offsetX / elem.clientWidth;
-                yNorm = event.offsetY / elem.clientHeight;
-            } else if (event instanceof TouchEvent) {
-                const rect = elem.getBoundingClientRect();
-                xNorm = (event.changedTouches[0].clientX - rect.left) / rect.width;
-                yNorm = (event.changedTouches[0].clientY - rect.top) / rect.height;
-            }
-    
-            _pGlob.screenCoords.x = xNorm * 2 - 1;
-            _pGlob.screenCoords.y = -yNorm * 2 + 1;
-            raycaster.setFromCamera(_pGlob.screenCoords, appInstance.getCamera(true));
-    
-            const objList = [];
-            appInstance.scene.traverse(obj => objList.push(obj));
-    
-            const intersects = raycaster.intersectObjects(objList, false);
-            callback(intersects, event);
+            prevTapTime = new Date().getTime();
         }
+
+        const touchEventName = mouseDownUseTouchStart ? 'touchstart' : 'touchend';
+        bindListener(elem, touchEventName, doubleTapCallback);
     }
+
+    const raycaster = new v3d.Raycaster();
+
+    function pickListener(event) {
+        if (!appInstance || !appInstance.getCamera) return;
+        const camera = appInstance.getCamera();
+        if (!camera) return;
+
+        event.preventDefault();
+
+        let xNorm = 0, yNorm = 0;
+        if (event instanceof MouseEvent) {
+            if (allowedMouseButtons !== null && allowedMouseButtons.indexOf(event.button) === -1) return;
+            xNorm = event.offsetX / elem.clientWidth;
+            yNorm = event.offsetY / elem.clientHeight;
+        } else if (event instanceof TouchEvent) {
+            const rect = elem.getBoundingClientRect();
+            xNorm = (event.changedTouches[0].clientX - rect.left) / rect.width;
+            yNorm = (event.changedTouches[0].clientY - rect.top) / rect.height;
+        }
+
+        _pGlob.screenCoords.x = xNorm * 2 - 1;
+        _pGlob.screenCoords.y = -yNorm * 2 + 1;
+        raycaster.setFromCamera(_pGlob.screenCoords, camera);
+
+        const objList = [];
+        if (appInstance.scene) {
+            appInstance.scene.traverse(obj => objList.push(obj));
+        }
+
+        const intersects = raycaster.intersectObjects(objList, false);
+        callback(intersects, event);
+    }
+}
         
     function isObjectAmongObjects(objNameToCheck, objUUIDToCheck, objNames) {
         if (!objNameToCheck) {
@@ -602,18 +612,16 @@ function setObjTransform(objSelector, isWorldSpace, mode, vector, offset) {
 
 // setCameraParam puzzle
 function setCameraParam(type, camSelector, param) {
-
     const camNames = PzLib.retrieveObjectNames(camSelector);
 
     camNames.forEach(function(camName) {
-        if (!camName)
-            return;
+        if (!camName) return;
 
         var cam = PzLib.getObjectByName(camName);
         if (!cam || !cam.isCamera) return;
 
         if (!(cam.isPerspectiveCamera || cam.isOrthographicCamera)) {
-            console.error('set camera param puzzle: Incompatible camera type, have to be perspective or orthographic');
+            console.error('set camera param puzzle: Incompatible camera type');
             return;
         }
 
@@ -642,11 +650,11 @@ function setCameraParam(type, camSelector, param) {
 
         if (isSetControlsParam) {
             if (!cam.controlSettings) {
-                console.error('set camera param puzzle: The "' + camName +'" camera has no control settings assigned');
+                console.error('set camera param puzzle: no control settings');
                 return;
             } else if ((isSetOrbitParam && cam.controlSettings.type != 'ORBIT') ||
                     (isSetFirstpersonParam && cam.controlSettings.type != 'FIRST_PERSON')) {
-                console.error('set camera param puzzle: Incompatible camera controls: ' + cam.controlSettings.type);
+                console.error('set camera param puzzle: incompatible controls');
                 return;
             }
         }
@@ -656,18 +664,12 @@ function setCameraParam(type, camSelector, param) {
                 if (cam.isPerspectiveCamera) {
                     cam.fov = param;
                     cam.updateProjectionMatrix();
-                } else {
-                    console.error('set camera param puzzle: Incompatible camera type, have to be perspective');
-                    return;
                 }
                 break;
             case 'ORTHO_SCALE':
                 if (cam.isOrthographicCamera) {
                     cam.zoom = param;
                     cam.updateProjectionMatrix();
-                } else {
-                    console.error('set camera param puzzle: Incompatible camera type, have to be orthographic');
-                    return;
                 }
                 break;
             case 'ROTATION_SPEED':
@@ -691,33 +693,23 @@ function setCameraParam(type, camSelector, param) {
             case 'ORBIT_MIN_DISTANCE_PERSP':
                 if (cam.isPerspectiveCamera) {
                     cam.controlSettings.orbitMinDistance = param;
-                } else {
-                    console.error('set camera param puzzle: Incompatible camera type, have to be perspective');
-                    return;
+                    cam.controlSettings.orbitMinDistancePersp = param; // BOTH variants
                 }
                 break;
             case 'ORBIT_MAX_DISTANCE_PERSP':
                 if (cam.isPerspectiveCamera) {
                     cam.controlSettings.orbitMaxDistance = param;
-                } else {
-                    console.error('set camera param puzzle: Incompatible camera type, have to be perspective');
-                    return;
+                    cam.controlSettings.orbitMaxDistancePersp = param; // BOTH variants
                 }
                 break;
             case 'ORBIT_MIN_ZOOM_ORTHO':
                 if (cam.isOrthographicCamera) {
                     cam.controlSettings.orbitMinZoom = param;
-                } else {
-                    console.error('set camera param puzzle: Incompatible camera type, have to be orthographic');
-                    return;
                 }
                 break;
             case 'ORBIT_MAX_ZOOM_ORTHO':
                 if (cam.isOrthographicCamera) {
                     cam.controlSettings.orbitMaxZoom = param;
-                } else {
-                    console.error('set camera param puzzle: Incompatible camera type, have to be orthographic');
-                    return;
                 }
                 break;
             case 'ORBIT_MIN_VERTICAL_ANGLE':
@@ -751,26 +743,54 @@ function setCameraParam(type, camSelector, param) {
                 break;
         }
 
-        if (isSetControlsParam)
-            appInstance.enableControls();
-
+        if (isSetControlsParam && appInstance && typeof appInstance.enableControls === 'function') {
+            try {
+                appInstance.enableControls();
+            } catch (e) {
+                console.error('setCameraParam: enableControls failed', e);
+            }
+        }
     });
 }
 
-// autoRotateCamera puzzle
-function autoRotateCamera(enabled, speed) {
+// autoRotateCamera - SIMPLIFIED (no token tracking needed)
+function autoRotateCamera(enabled, speed, retryCount = 0) {
+    const MAX_RETRIES = 10;
+    const RETRY_DELAY = 300;
 
-    if (appInstance.controls && appInstance.controls instanceof v3d.OrbitControls) {
-        appInstance.controls.autoRotate = enabled;
-        appInstance.controls.autoRotateSpeed = speed;
-    } else {
-        console.error('autorotate camera puzzle: Wrong controls type');
+    if (!appInstance || !appInstance.controls) {
+        if (retryCount < MAX_RETRIES) {
+            const timerId = setTimeout(() => autoRotateCamera(enabled, speed, retryCount + 1), RETRY_DELAY);
+            if (_pGlob && _pGlob.activeTimerIds) {
+                _pGlob.activeTimerIds.add(timerId);
+            }
+            return;
+        }
+        console.error('autorotate camera: controls not available after retries');
+        return;
     }
+    
+    if (!(appInstance.controls instanceof v3d.OrbitControls)) {
+        console.error('autorotate camera: wrong controls type');
+        return;
+    }
+
+    appInstance.controls.autoRotate = enabled;
+    appInstance.controls.autoRotateSpeed = speed;
 }
 
-// setTimeout puzzle
+// registerSetTimeout puzzle - MODIFIED to track timer IDs
 function registerSetTimeout(timeout, callback) {
-    window.setTimeout(callback, 1000 * timeout);
+    const timerId = window.setTimeout(() => {
+        // Remove from tracking when it fires
+        _pGlob.activeTimerIds.delete(timerId);
+        callback();
+    }, 1000 * timeout);
+    
+    // Track this timer ID
+    _pGlob.activeTimerIds.add(timerId);
+    
+    return timerId;
 }
 
 // whenClicked puzzle
@@ -861,10 +881,45 @@ PL.disposeMaterialsCache = function() {
 }
 
 PL.dispose = function() {
+    // CRITICAL: Clear ALL tracked timers FIRST
+    if (_pGlob) {
+        // Clear all setTimeout timers
+        if (_pGlob.activeTimerIds) {
+            _pGlob.activeTimerIds.forEach(id => {
+                window.clearTimeout(id);
+            });
+            _pGlob.activeTimerIds.clear();
+        }
+        
+        // Clear all setInterval timers
+        if (_pGlob.activeIntervalIds) {
+            _pGlob.activeIntervalIds.forEach(id => {
+                window.clearInterval(id);
+            });
+            _pGlob.activeIntervalIds.clear();
+        }
+        
+        // Clear all requestAnimationFrame callbacks
+        if (_pGlob.activeFrameIds) {
+            _pGlob.activeFrameIds.forEach(id => {
+                window.cancelAnimationFrame(id);
+            });
+            _pGlob.activeFrameIds.clear();
+        }
+        
+        // Clear interval timers object (old puzzle system)
+        if (_pGlob.intervalTimers) {
+            for (const name in _pGlob.intervalTimers) {
+                clearInterval(_pGlob.intervalTimers[name]);
+            }
+        }
+    }
+    
     PL.disposeListeners();
     PL.disposeHTMLElements();
     PL.disposeMaterialsCache();
     _pGlob = null;
+    
     // backward compatibility
     if (v3d[Symbol.toStringTag] !== 'Module') {
         delete v3d.PL;

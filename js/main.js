@@ -27,12 +27,11 @@ const make_charts = function() {
 make_charts();
 
 // =====================================================================
-// === VERGE3D UTILITY FUNCTIONS (ONLY THE VERGE3D LAYER IS TOUCHED)
+// === VERGE3D UTILITY FUNCTIONS ===
 // =====================================================================
 
 /**
- * JSON currently provides paths like `app/the_name.glb`.
- * This function forces loading from `app/glb/<fileName>.glb` regardless of input path.
+ * Normalize GLB path to always load from app/glb/ directory
  */
 function normalizeGlbSceneURL(nameOrPath) {
   if (!nameOrPath || typeof nameOrPath !== 'string') return '';
@@ -77,7 +76,7 @@ function safeFullscreenExit() {
 }
 
 /**
- * Handles Fullscreen logic and returns a disposal function.
+ * Setup fullscreen button handlers
  */
 function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
   const container = document.getElementById(containerId);
@@ -90,7 +89,6 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
     return null;
   }
 
-  // IMPORTANT: fullscreen the overlay wrapper so the button remains visible
   const overlay = document.getElementById('overlay_ship');
   const fsTarget = overlay || container;
 
@@ -120,7 +118,6 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
     fsButton.classList.toggle('fullscreen-open', !elem);
     fsButton.classList.toggle('fullscreen-close', !!elem);
 
-    // Keep existing behavior: hide X while fullscreen
     const closeX = document.getElementById('closeOverlay');
     if (closeX) closeX.style.display = elem ? 'none' : 'block';
 
@@ -130,14 +127,11 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
   function fsButtonClick(event) {
     event.stopPropagation();
 
-    // In fullscreen: clicking the fullscreen button should close the overlay
-    // the same way as the X does (and it will also exit fullscreen).
     if (fsElement()) {
       closeOverlayAndDisposeApp();
       return;
     }
 
-    // Not fullscreen: enter fullscreen
     if (fsTarget) {
       const closeX = document.getElementById('closeOverlay');
       if (closeX) closeX.style.display = 'none';
@@ -148,7 +142,6 @@ function prepareFullscreen(containerId, fsButtonId, useFullscreen) {
   if (fsEnabled()) {
     fsButton.style.display = 'inline';
   } else {
-    // no fullscreen support → just show the normal close
     const closeX = document.getElementById('closeOverlay');
     if (closeX) closeX.style.display = 'block';
   }
@@ -232,7 +225,7 @@ function createAppInstance(containerId, initOptions, preloader, PE) {
 }
 
 // =====================================================================
-// === CONTROL SETTINGS PATCHING (KEY FOR ORBIT + MIN/MAX DISTANCE) ===
+// === CONTROL SETTINGS PATCHING ===
 // =====================================================================
 
 function toNum(v) {
@@ -241,17 +234,13 @@ function toNum(v) {
 }
 
 /**
- * Creates a controlSettings object that:
- * - preserves any existing fields (including those set by Puzzles)
- * - provides `assignToControls()` so `app.enableControls()` won't crash
- * - maps BOTH generic and *_PERSP naming variants to OrbitControls
+ * Creates controlSettings object with safe defaults and assignToControls method
  */
 function patchOrbitControlSettings(existing = {}) {
   const cs = { ...existing };
 
   if (!cs.type) cs.type = 'ORBIT';
 
-  // sensible defaults, only if missing
   if (cs.enableRotate === undefined) cs.enableRotate = true;
   if (cs.enablePan === undefined) cs.enablePan = false;
   if (cs.enableZoom === undefined) cs.enableZoom = true;
@@ -259,11 +248,9 @@ function patchOrbitControlSettings(existing = {}) {
   if (cs.enableKeys === undefined) cs.enableKeys = false;
   if (cs.rotateSpeed === undefined) cs.rotateSpeed = 1.0;
 
-  // defaults for distance if missing (puzzles may override later)
   if (cs.orbitMinDistance === undefined && cs.orbitMinDistancePersp === undefined) cs.orbitMinDistance = 1.5;
   if (cs.orbitMaxDistance === undefined && cs.orbitMaxDistancePersp === undefined) cs.orbitMaxDistance = 10;
 
-  // Defaults for angles (puzzles may override)
   if (cs.orbitMinPolarAngle === undefined) cs.orbitMinPolarAngle = 0;
   if (cs.orbitMaxPolarAngle === undefined) cs.orbitMaxPolarAngle = Math.PI;
 
@@ -271,26 +258,21 @@ function patchOrbitControlSettings(existing = {}) {
     cs.assignToControls = function(controls) {
       if (!controls) return;
 
-      // enable flags
       if ('enableRotate' in controls) controls.enableRotate = !!cs.enableRotate;
       if ('enablePan' in controls) controls.enablePan = !!cs.enablePan;
       if ('enableZoom' in controls) controls.enableZoom = !!cs.enableZoom;
       if ('enableKeys' in controls) controls.enableKeys = !!cs.enableKeys;
 
-      // rotate speed
       if ('rotateSpeed' in controls && toNum(cs.rotateSpeed) !== undefined) {
         controls.rotateSpeed = toNum(cs.rotateSpeed);
       }
 
-      // Perspective distance limits:
-      // Prefer fields that Puzzles likely writes for PERSP, fall back to generic ones.
       const minD = toNum(cs.orbitMinDistancePersp) ?? toNum(cs.orbitMinDistance);
       const maxD = toNum(cs.orbitMaxDistancePersp) ?? toNum(cs.orbitMaxDistance);
 
       if ('minDistance' in controls && minD !== undefined) controls.minDistance = minD;
       if ('maxDistance' in controls && maxD !== undefined) controls.maxDistance = maxD;
 
-      // Polar / azimuth limits
       const minP = toNum(cs.orbitMinPolarAngle);
       const maxP = toNum(cs.orbitMaxPolarAngle);
       if ('minPolarAngle' in controls && minP !== undefined) controls.minPolarAngle = minP;
@@ -301,12 +283,10 @@ function patchOrbitControlSettings(existing = {}) {
       if ('minAzimuthAngle' in controls && minA !== undefined) controls.minAzimuthAngle = minA;
       if ('maxAzimuthAngle' in controls && maxA !== undefined) controls.maxAzimuthAngle = maxA;
 
-      // screen space panning
       if ('screenSpacePanning' in controls && cs.screenSpacePanning !== undefined) {
         controls.screenSpacePanning = !!cs.screenSpacePanning;
       }
 
-      // ctrl zoom (optional in some builds)
       if ('enableCtrlZoom' in controls && cs.enableCtrlZoom !== undefined) {
         controls.enableCtrlZoom = !!cs.enableCtrlZoom;
       }
@@ -317,7 +297,7 @@ function patchOrbitControlSettings(existing = {}) {
 }
 
 /**
- * Ensure a camera named "Camera" exists in the scene graph and is compatible with Puzzles.
+ * Ensure a camera named "Camera" exists with proper controlSettings
  */
 function ensureNamedCamera(app) {
   if (!app || !app.scene) return null;
@@ -328,17 +308,14 @@ function ensureNamedCamera(app) {
     return cam;
   }
 
-  // Try to find any camera already in the scene
   let anySceneCam = null;
   app.scene.traverse(obj => {
     if (!anySceneCam && obj && obj.isCamera) anySceneCam = obj;
   });
 
-  // Or use app's default camera (may not be in scene)
   const defaultCam = (typeof app.getCamera === 'function') ? app.getCamera(true) : null;
   cam = anySceneCam || defaultCam;
 
-  // Last resort: create one
   if (!cam) {
     cam = new v3d.PerspectiveCamera(45, 1, 0.1, 1000);
     cam.position.set(0, 0, 6);
@@ -347,12 +324,10 @@ function ensureNamedCamera(app) {
 
   cam.name = 'Camera';
 
-  // Add to scene so Puzzles can find it by name
   if (!cam.parent) app.scene.add(cam);
 
   cam.controlSettings = patchOrbitControlSettings(cam.controlSettings || {});
 
-  // Make it the app's active camera (best-effort)
   if (typeof app.setCamera === 'function') {
     try { app.setCamera(cam); } catch (e) { console.error(e); }
   }
@@ -361,26 +336,11 @@ function ensureNamedCamera(app) {
 }
 
 /**
- * IMPORTANT: do NOT manually create OrbitControls.
- * Let Verge3D manage controls via `app.enableControls()`.
+ * Ensure OrbitControls exist and are properly configured
  */
 function ensureOrbitControls(app) {
-  if (!app) return false;
-
-  // If controls already exist and are orbit, just ensure rotate isn't blocked
-  if (app.controls && (app.controls instanceof v3d.OrbitControls)) {
-    if ('enableRotate' in app.controls) app.controls.enableRotate = true;
-    return true;
-  }
-
-  // Ensure active camera has compatible orbit control settings
-  const cam = (typeof app.getCamera === 'function') ? app.getCamera(true) : null;
-  if (cam) cam.controlSettings = patchOrbitControlSettings(cam.controlSettings || {});
-
-  try {
-    app.enableControls(); // engine creates & updates controls per-frame
-  } catch (e) {
-    console.error(e);
+  if (!app) {
+    console.warn('ensureOrbitControls: app is null');
     return false;
   }
 
@@ -389,12 +349,36 @@ function ensureOrbitControls(app) {
     return true;
   }
 
+  const cam = (typeof app.getCamera === 'function') ? app.getCamera(true) : null;
+  if (!cam) {
+    console.warn('ensureOrbitControls: no camera available');
+    return false;
+  }
+
+  if (!cam.controlSettings) {
+    cam.controlSettings = patchOrbitControlSettings({});
+  } else {
+    cam.controlSettings = patchOrbitControlSettings(cam.controlSettings);
+  }
+
+  try {
+    app.enableControls();
+  } catch (e) {
+    console.error('ensureOrbitControls: enableControls failed', e);
+    return false;
+  }
+
+  if (app.controls && (app.controls instanceof v3d.OrbitControls)) {
+    if ('enableRotate' in app.controls) app.controls.enableRotate = true;
+    return true;
+  }
+
+  console.warn('ensureOrbitControls: controls not created or wrong type');
   return false;
 }
 
 /**
- * After Puzzles sets ORBIT_MIN_DISTANCE_PERSP / ORBIT_MAX_DISTANCE_PERSP
- * on the scene camera named "Camera", push them onto the live OrbitControls.
+ * Apply orbit limits from camera.controlSettings to live OrbitControls
  */
 function applyOrbitLimitsFromNamedCamera(app, camName = 'Camera') {
   if (!app || !app.scene) return;
@@ -403,11 +387,10 @@ function applyOrbitLimitsFromNamedCamera(app, camName = 'Camera') {
   if (!controls || !(controls instanceof v3d.OrbitControls)) return;
 
   const cam = app.scene.getObjectByName(camName);
-  if (!cam || !cam.isCamera) return;
+  if (!cam || !cam.isCamera || !cam.controlSettings) return;
 
-  cam.controlSettings = patchOrbitControlSettings(cam.controlSettings || {});
+  cam.controlSettings = patchOrbitControlSettings(cam.controlSettings);
 
-  // Prefer PERSP variants if present, otherwise generic orbitMin/MaxDistance
   const minD = toNum(cam.controlSettings.orbitMinDistancePersp) ?? toNum(cam.controlSettings.orbitMinDistance);
   const maxD = toNum(cam.controlSettings.orbitMaxDistancePersp) ?? toNum(cam.controlSettings.orbitMaxDistance);
 
@@ -428,88 +411,103 @@ function applyOrbitLimitsFromNamedCamera(app, camName = 'Camera') {
 }
 
 // =====================================================================
-// === VERGE3D DISPOSAL (IMPORTANT: DO NOT CALL PL.dispose()) ===
+// === COMPLETE VERGE3D DISPOSAL ===
 // =====================================================================
 
 /**
- * IMPORTANT:
- * Do NOT call `PL.dispose()` here. In generated puzzles logic it can set `_pGlob = null`,
- * and due to loader/module caching the next overlay open may reuse that module instance.
+ * COMPLETE disposal - PL.dispose() now handles timer cleanup
  */
 function disposeVerge3DInstance(instance) {
   if (!instance || !instance.app) return;
 
-  if (instance.PL) {
-    if (typeof instance.PL.disposeListeners === 'function') {
-      try { instance.PL.disposeListeners(); } catch (e) { /* ignore */ }
-    }
-    if (typeof instance.PL.disposeHTMLElements === 'function') {
-      try { instance.PL.disposeHTMLElements(); } catch (e) { /* ignore */ }
-    }
-    if (typeof instance.PL.disposeMaterialsCache === 'function') {
-      try { instance.PL.disposeMaterialsCache(); } catch (e) { /* ignore */ }
+  // 1. Stop render loop
+  if (instance.app.frame) {
+    try { instance.app.frame.dispose(); } catch (e) { /* ignore */ }
+  }
+
+  // 2. FULLY dispose puzzles (clears ALL tracked timers + sets _pGlob = null)
+  if (instance.PL && typeof instance.PL.dispose === 'function') {
+    try { 
+      instance.PL.dispose(); // This clears all tracked timers!
+    } catch (e) { 
+      console.warn('PL.dispose error:', e); 
     }
   }
 
+  // 3. Dispose controls
   if (instance.app.controls && typeof instance.app.controls.dispose === 'function') {
     try { instance.app.controls.dispose(); } catch (e) { /* ignore */ }
   }
+  instance.app.controls = null;
 
+  // 4. Dispose renderer
   if (instance.app.renderer) {
     try { instance.app.renderer.dispose(); } catch (e) { /* ignore */ }
     if (typeof instance.app.renderer.forceContextLoss === 'function') {
       try { instance.app.renderer.forceContextLoss(); } catch (e) { /* ignore */ }
     }
+    instance.app.renderer = null;
   }
 
+  // 5. Clear scene
+  if (instance.app.scene) {
+    instance.app.scene.traverse(obj => {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) {
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach(mat => mat.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      }
+    });
+  }
+
+  // 6. Dispose app
   try { instance.app.dispose(); } catch (e) { /* ignore */ }
 
+  // 7. Dispose fullscreen handler
   if (instance.disposeFullscreen) {
     try { instance.disposeFullscreen(); } catch (e) { /* ignore */ }
   }
 }
 
+/**
+ * Lock orbit controls to prevent panning
+ */
 function lockOrbitMouseBindingsNoPan(app) {
   const controls = app?.controls;
   if (!controls || !(controls instanceof v3d.OrbitControls)) return;
 
-  // Hard-disable panning
   controls.enablePan = false;
 
-  // Remap mouse buttons so middle button is NOT pan
-  // three.js/Verge3D constants are usually v3d.MOUSE.{ROTATE,DOLLY,PAN}
   const MOUSE = v3d.MOUSE || { ROTATE: 0, DOLLY: 1, PAN: 2 };
 
   if (controls.mouseButtons) {
-    // Typical desired mapping:
-    // LEFT: rotate, MIDDLE: dolly/zoom, RIGHT: rotate (or disable right-pan)
     controls.mouseButtons.LEFT = MOUSE.ROTATE;
     controls.mouseButtons.MIDDLE = MOUSE.DOLLY;
-
-    // If you also want to prevent right-button pan:
-    // set RIGHT to ROTATE (or leave as PAN if you like right-pan)
     controls.mouseButtons.RIGHT = MOUSE.ROTATE;
   }
 
-  // Touch bindings can also pan (2-finger). Disable if needed:
   if (controls.touches) {
     const TOUCH = v3d.TOUCH || { ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3 };
-    // Choose one:
-    // - disable panning gestures by avoiding PAN / DOLLY_PAN modes
     controls.touches.ONE = TOUCH.ROTATE;
-    controls.touches.TWO = TOUCH.DOLLY_ROTATE; // zoom + rotate, no pan
+    controls.touches.TWO = TOUCH.DOLLY_ROTATE;
   }
 
   controls.update();
 }
 
 // =====================================================================
-// === VERGE3D LIFECYCLE MANAGEMENT
+// === VERGE3D LIFECYCLE MANAGEMENT ===
 // =====================================================================
 
 let activeAppInstance = null;
 let v3dLaunchToken = 0;
 
+/**
+ * Create and initialize Verge3D app
+ */
 async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = '', launchToken }) {
   if (!sceneURL) {
     console.log('No scene URL specified');
@@ -522,14 +520,13 @@ async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = 
     return null;
   }
 
+  // Force fresh module load
   v3d.Cache.enabled = false;
 
   let PL = null;
   let PE = null;
 
-  // IMPORTANT:
-  // In Verge3D 4.11, `isJS/isXML` may return false if the URL has `?v=...`.
-  // So we detect type using a clean URL, but load using a cache-busted URL.
+  // Cache-bust the logic URL
   const logicURLClean = stripQueryHash(logicURL || '');
   const logicURLToLoad = logicURLClean ? addCacheBuster(logicURLClean, launchToken) : logicURLClean;
 
@@ -568,7 +565,7 @@ async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = 
     return false;
   });
 
-  // If another overlay launch happened while this one was loading, dispose immediately
+  // Check if superseded by newer launch
   if (launchToken !== v3dLaunchToken) {
     try { disposeVerge3DInstance({ app, PL, PE, disposeFullscreen }); } catch (e) { /* ignore */ }
     return null;
@@ -579,50 +576,65 @@ async function createApp({ containerId, fsButtonId = null, sceneURL, logicURL = 
     return null;
   }
 
-  // Make sure Puzzles can find camera "Camera" and enableControls won't crash
+  // Ensure camera exists
   ensureNamedCamera(app);
+  
+  // Wait for scene to settle
+  await new Promise(resolve => setTimeout(resolve, 150));
 
-  // Create controls via Verge3D
+  if (launchToken !== v3dLaunchToken) {
+    try { disposeVerge3DInstance({ app, PL, PE, disposeFullscreen }); } catch (e) { /* ignore */ }
+    return null;
+  }
+
+  // Create controls
   try { app.enableControls(); } catch (e) { console.error(e); }
   lockOrbitMouseBindingsNoPan(app);
-
-  // Ensure we end up with OrbitControls and rotation is allowed
-  ensureOrbitControls(app);
 
   // Start render loop
   try { app.run(); } catch (e) { console.error(e); }
 
   if (PE) PE.updateAppInstance(app);
 
-  // Init puzzles AFTER app is running
-  if (PL) {
-    try { PL.init(app, initOptions); } catch (e) { console.error(e); }
+  // Wait for renderer/controls to stabilize
+  await new Promise(resolve => setTimeout(resolve, 200));
+
+  if (launchToken !== v3dLaunchToken) {
+    try { disposeVerge3DInstance({ app, PL, PE, disposeFullscreen }); } catch (e) { /* ignore */ }
+    return null;
   }
-  lockOrbitMouseBindingsNoPan(app);
 
-  // Puzzles may call enableControls again; re-ensure orbit controls
-  ensureOrbitControls(app);
+  // Init puzzles AFTER everything is ready
+  if (PL) {
+    try { 
+      PL.init(app, initOptions); 
+    } catch (e) { 
+      console.error('PL.init failed:', e); 
+    }
+  }
+
+  // Apply final overrides
+  await new Promise(resolve => setTimeout(resolve, 100));
   
+  if (launchToken !== v3dLaunchToken) {
+    try { disposeVerge3DInstance({ app, PL, PE, disposeFullscreen }); } catch (e) { /* ignore */ }
+    return null;
+  }
 
-  // Apply min/max distance from scene camera "Camera" onto the live OrbitControls
+  lockOrbitMouseBindingsNoPan(app);
+  ensureOrbitControls(app);
   applyOrbitLimitsFromNamedCamera(app);
 
-  // Also apply once more shortly after init (covers async puzzle changes in some setups)
-  window.setTimeout(() => {
-    if (launchToken !== v3dLaunchToken) return;
-    ensureOrbitControls(app);
-    applyOrbitLimitsFromNamedCamera(app);
-  }, 250);
-
   removeSpecificElement();
-
   requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
 
   return { app, PL, PE, disposeFullscreen };
 }
 
+/**
+ * Open overlay and load Verge3D scene
+ */
 async function openOverlay(ship_path) {
-
   const instruct_element = document.getElementById('shroud_instruct');
 
   v3dLaunchToken += 1;
@@ -630,6 +642,8 @@ async function openOverlay(ship_path) {
 
   if (activeAppInstance) {
     closeOverlayAndDisposeApp({ keepOverlayOpen: true });
+    // Brief delay for disposal to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
   }
 
   const shroud = document.getElementById('calendar-shroud');
@@ -686,18 +700,18 @@ async function openOverlay(ship_path) {
   }
 }
 
-function instruct_fadeIn_fadeOut (element) {
-   setTimeout(() => {
-        // Fade in
-        element.style.opacity = 1;
-
-        setTimeout(() => {
-            // Fade out after 7 seconds
-            element.style.opacity = 0;
-        }, 7000); // 7 seconds
-    }, 2000); // 2 seconds
+function instruct_fadeIn_fadeOut(element) {
+  setTimeout(() => {
+    element.style.opacity = 1;
+    setTimeout(() => {
+      element.style.opacity = 0;
+    }, 7000);
+  }, 2000);
 }
 
+/**
+ * Close overlay and completely dispose Verge3D instance
+ */
 function closeOverlayAndDisposeApp({ keepOverlayOpen = false } = {}) {
   safeFullscreenExit();
 
