@@ -113,17 +113,6 @@ img {
 
 /* --- OVERLAY CONTAINER STYLING (Responsive) --- */
 
-#closeOverlay {
-  position: absolute;
-  font-size: 2.5vh;
-  color: #C4C4C4;
-  bottom: 2%;
-  right: 2%;
-  display: block;
-  cursor: pointer;
-  z-index: 2000;
-}
-
 .overlay_regular {
   position: fixed;
   inset: 0;
@@ -138,16 +127,13 @@ img {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-
   background: #0f0312;
   padding: 1.5vw;
-  
   width: 90%;
   height: 40%;
   max-width: 900px;
   max-height: 800px;
   min-width: 300px;
-
   overflow: auto;
   border-radius: 1vw;
   color: #e0d4d4;
@@ -269,11 +255,11 @@ img {
         font-size: 2.5vw;
     }
 
-    #closeOverlay {
+    /* #closeOverlay {
       font-size: 4vh;
       bottom: 0.5%;
       right: 4%;
-    }
+    } */
 }
 
 
@@ -302,6 +288,17 @@ img {
   border-width: 0.1vw;
   animation: fadeIn ease 0.3s;
   z-index: 1000;
+}
+
+#closeOverlay {
+  position: absolute;
+  font-size: 2.5vh;
+  color: #C4C4C4;
+  bottom: 2%;
+  right: 2%;
+  display: block;
+  cursor: pointer;
+  z-index: 2000;
 }
 
 .fullscreen-button {
