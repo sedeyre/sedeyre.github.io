@@ -747,7 +747,7 @@ function setupCloseOverlayListener() {
 }
 
 // =====================================================================
-// === CALENDAR/BOOK FUNCTIONS (UNCHANGED) ===
+// === CALENDAR/BOOK FUNCTIONS  ===
 // =====================================================================
 
 function drawChart(json_obj) {
@@ -793,7 +793,7 @@ function drawChart(json_obj) {
 
   var chart = new google.visualization.Calendar(document.getElementById('calendar_basic'));
 
-  let cellSize_ = width/56;
+  let cellSize_ = width/56.5;
 
   const CALENDAR_HEIGHT_MULTIPLIER = 8.7;
   const underYearSpace = 12;
